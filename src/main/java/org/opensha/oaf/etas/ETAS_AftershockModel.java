@@ -467,15 +467,6 @@ public abstract class ETAS_AftershockModel {
 			tvec = ArrayUtils.subarray(tas, 0, numPts);
 		}
 
-//		
-//		if (tMinDays > 1e-3){
-//			tvec = ETAS_StatsCalc.logspace(tMinDays, tMaxDays, numPts);
-//		} else if (tMaxDays > 1e-3){
-//			tvec = ETAS_StatsCalc.logspace(1e-3, tMaxDays, numPts);
-//		} else {
-//			tvec = ETAS_StatsCalc.linspace(tMinDays, tMaxDays, numPts);
-//		}
-		
 		for(double t : tvec){
 			//compute expected number for comparison with known quakes (plot fit)
 			expCount = getExpectedNumEvents(magMin, tMinDays, t);
@@ -564,108 +555,6 @@ public abstract class ETAS_AftershockModel {
 		return Ntot;
 	}
 
-//	public EvenlyDiscretizedFunc[] getCumNumMFD_FractileWithAleatoryVariability(double[] fractileArray, double minMag, double maxMag, int numMag, double tMinDays, double tMaxDays) {
-//		EvenlyDiscretizedFunc[] mfdArray = new EvenlyDiscretizedFunc[fractileArray.length];
-//
-//		for(int i=0;i<fractileArray.length;i++) {
-//			mfdArray[i] = new EvenlyDiscretizedFunc(minMag, maxMag, numMag);
-//			mfdArray[i].setName(fractileArray[i]+" Fractile for Num Events, including aleatory variability");
-//			mfdArray[i].setInfo("Cumulative distribution (greater than or equal to each magnitude)");
-//		}
-//
-//		// get fractile rates at magComplete
-//		//		double mag0 = mfdArray[0].getX(0);	// any MFD will do, as they all have the same x-axis values
-////		double mag0 = magComplete;
-////		double[] valsArray0 = getCumNumFractileWithAleatory(fractileArray, mag0, tMinDays, tMaxDays);
-////
-////		double mag, val;
-////		for(int i=0;i<numMag;i++) {
-////			mag = mfdArray[0].getX(i);	// any MFD will do, as they all have the same x-axis values
-////			for(int j=0;j<fractileArray.length;j++) {
-////				val = valsArray0[j]*Math.pow(10, -b*(mag - mag0));
-////				mfdArray[j].set(i,val);
-////			}
-////		}
-//		
-//		// use the stochastic method
-////		computeNum_DistributionFunc(tMinDays, tMaxDays, minMag);
-//		int[] eventCounts = simulatedCatalog.getEventCounts(tMinDays,tMaxDays,minMag);
-//		StackedMND mndStack = new StackedMND(mfdArray, eventCounts, magComplete); 
-//		mndStack.generateQuantiles(b, fractileArray);
-//		
-//		return mndStack.getQuantiles();
-//		
-//	}
-	
-//	public List<EvenlyDiscretizedFunc[]> getMNDandMPOE(double[] fractileArray, double minMag, double maxMag, int numMag, double tMinDays, double tMaxDays) {
-//		List<EvenlyDiscretizedFunc[]> forecast = new ArrayList<EvenlyDiscretizedFunc[]>();
-//		
-//		EvenlyDiscretizedFunc[] mfdArray = new EvenlyDiscretizedFunc[fractileArray.length];
-//
-//		for(int i=0;i<fractileArray.length;i++) {
-//			mfdArray[i] = new EvenlyDiscretizedFunc(minMag, maxMag, numMag);
-//			mfdArray[i].setName(fractileArray[i]+" Fractile for Num Events, including aleatory variability");
-//			mfdArray[i].setInfo("Cumulative distribution (greater than or equal to each magnitude)");
-//		}
-//
-//		EvenlyDiscretizedFunc[] magnitudePDF = new EvenlyDiscretizedFunc[1];
-//		magnitudePDF[0] = new EvenlyDiscretizedFunc(minMag, maxMag, numMag);
-//		
-//		magnitudePDF[0].setName("probabiltiy of exceeding magnitude M");
-//		magnitudePDF[0].setInfo("Cumulative distribution (greater than or equal to each magnitude)");
-//		
-//		// use the stochastic method
-//		int[] eventCounts = simulatedCatalog.getEventCounts(tMinDays,tMaxDays,minMag);
-//		double minMagSim = simulatedCatalog.minMagLimit;
-//		StackedMND mndStack = new StackedMND(mfdArray, eventCounts, minMagSim, b, fractileArray); 
-//		forecast.add(mndStack.getQuantiles());
-//
-//		// return magnitude probabilities
-//		magnitudePDF[0] = mndStack.getProbabilities();
-//		forecast.add(magnitudePDF);
-//		return forecast;
-//	}
-//
-//	public double[] getCumNumFractileWithAleatory(double[] fractileArray, double mag, double tMinDays, double tMaxDays) {
-//		// use the stochastic method. This needs a new constructor.
-//		double[] fractValArray = new double[fractileArray.length];
-//		int[] eventCounts = simulatedCatalog.getEventCounts(tMinDays,tMaxDays,mag);
-//		double minMagSim = simulatedCatalog.minMagLimit;
-//		StackedMND mndStack = new StackedMND(mag, eventCounts, minMagSim, b, fractileArray); 
-//		fractValArray = mndStack.getSingleQuantile();
-//
-//		return fractValArray;
-//	}
-	
-//	public List<EvenlyDiscretizedFunc[]> getMNDandMPOE(double[] fractileArray, double minMag, double maxMag, int numMag, double tMinDays, double tMaxDays) {
-//		List<EvenlyDiscretizedFunc[]> forecast = new ArrayList<EvenlyDiscretizedFunc[]>();
-//		
-//		EvenlyDiscretizedFunc[] mfdArray = new EvenlyDiscretizedFunc[fractileArray.length];
-//
-//		for(int i=0;i<fractileArray.length;i++) {
-//			mfdArray[i] = new EvenlyDiscretizedFunc(minMag, maxMag, numMag);
-//			mfdArray[i].setName(fractileArray[i]+" Fractile for Num Events, including aleatory variability");
-//			mfdArray[i].setInfo("Cumulative distribution (greater than or equal to each magnitude)");
-//		}
-//
-//		EvenlyDiscretizedFunc[] magnitudePDF = new EvenlyDiscretizedFunc[1];
-//		magnitudePDF[0] = new EvenlyDiscretizedFunc(minMag, maxMag, numMag);
-//		
-//		magnitudePDF[0].setName("probabiltiy of exceeding magnitude M");
-//		magnitudePDF[0].setInfo("Cumulative distribution (greater than or equal to each magnitude)");
-//		
-//		// use the stochastic method
-//		int[] eventCounts = simulatedCatalog.getEventCounts(tMinDays,tMaxDays,minMag);
-//		double minMagSim = simulatedCatalog.minMagLimit;
-//		StackedMND mndStack = new StackedMND(mfdArray, eventCounts, minMagSim, b, fractileArray); 
-//		forecast.add(mndStack.getQuantiles());
-//
-//		// return magnitude probabilities
-//		magnitudePDF[0] = mndStack.getProbabilities();
-//		forecast.add(magnitudePDF);
-//		return forecast;
-//	}
-
 	public List<EvenlyDiscretizedFunc[]> getMNDandMPOE(double[] fractileArray, double minMag, double maxMag, int numMag, double tMinDays, double tMaxDays) {
 		List<EvenlyDiscretizedFunc[]> forecast = new ArrayList<EvenlyDiscretizedFunc[]>();
 		
@@ -748,11 +637,6 @@ public abstract class ETAS_AftershockModel {
 			fractValArray[i] = num_DistributionFunc.getDiscreteFractile(fractileArray[i]);
 //			fractValArray[i] = scaledNumDistributionFunc(fractileArray[i], mag);
 			
-			// MOVED THE FOLLOWING CODE INTO METHOD SCALEDNUMDISTRIBUTIONFUNCTION
-			//
-			//
-			//			double fractValComplete = num_DistributionFunc.getDiscreteFractile(fractileArray[i]);			
-//			// the preceding gives the number of magComplete used in the simulation. We want the number of mag. Scale:
 //			if(mag < simulatedCatalog.minMagLimit) {
 //				
 //				// fractValComplete is an integer (the number of earthquakes for which f% of the simulations have fewer)
@@ -1121,10 +1005,13 @@ public abstract class ETAS_AftershockModel {
 						for(int cIndex=0;cIndex<num_c;cIndex++) {
 							double prevVal = hist2D.get(aIndex,pIndex);
 							hist2D.set(aIndex,pIndex, prevVal+likelihood[amsIndex][aIndex][pIndex][cIndex]);
+							
 						}
+						
 					}
 				}
 			}
+					
 			//			String name = "2D PDF of a vs p";
 			//			if(num_c != 1)
 			//				name += " (marginal)";
@@ -1164,7 +1051,7 @@ public abstract class ETAS_AftershockModel {
 					}
 				}
 			}
-
+				
 			if(D) {
 				System.out.println("2D PDF of a vs c: totalTest = "+hist2D.getSumZ());
 			}
@@ -1200,6 +1087,9 @@ public abstract class ETAS_AftershockModel {
 					}
 				}
 			}
+			
+			
+			
 			if(D) {
 				System.out.println("2D PDF of a vs logc: totalTest = "+hist2D.getSumZ());
 			}
@@ -1235,6 +1125,8 @@ public abstract class ETAS_AftershockModel {
 					}
 				}
 			}
+			
+			
 			if(D) {
 				System.out.println("2D PDF of logc vs p: totalTest = "+hist2D.getSumZ());
 			}

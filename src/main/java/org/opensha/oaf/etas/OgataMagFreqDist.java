@@ -502,7 +502,8 @@ public class OgataMagFreqDist{
 		return gof;
 		
 	}
-	public double verify(double mc){
+	
+//	public double verify(double mc){
 //		EvenlyDiscretizedFunc cumDensityMc = getMcCumulativeDensity();
 //		if (mc < cumDensityMc.getMinX()){
 //			System.out.println("Warning: setting Mc to a lower value than supported by the data \n"
@@ -521,6 +522,6 @@ public class OgataMagFreqDist{
 //			} catch (Exception e){
 //				System.err.println("Warning: could not validate choice of mc parameter.");
 //			}
-		return mc;
-	}
+//		return mc;
+//	}
 }

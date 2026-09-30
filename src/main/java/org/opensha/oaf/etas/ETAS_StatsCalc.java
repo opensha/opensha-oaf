@@ -215,9 +215,9 @@ public class ETAS_StatsCalc {
         		// Source scaling follows the assumption that M0 = stressdrop*L^3. Aftershocks outside this diameter are 
         		// downweighted following a cosine taper out to four times the radius. Weights are zero beyond.
         		//  
-        		if (r[i] < 2*r0)
+        		if (r[i] < 3*r0)
         			w[i] = 1d;
-        		else if (r[i] < 4*r0)
+        		else if (r[i] < 6*r0)
         			w[i] = 0.5 + 0.5*Math.cos( (r[i]-2*r0) * Math.PI/r0/2);
         		else
         			w[i] = 0.0;
@@ -229,6 +229,8 @@ public class ETAS_StatsCalc {
         	// time weighting follows omori's law, with a c-parameter of 1 day. The weight falls of as a power law beyond 1 day.
         	// This should be made an accessible option.
         	w[i] *= 1d/(dt[i] + 1d);
+//        	if (dt[i] == 0)	// don't include earthquake prior to the mainshock
+//        		w[i]=0;
 
 //    		w[i] = Math.pow(10, 0.5*mag[i]);	//weight by magntiude of the aftershock?
     		lonwsum += lon[i]*w[i];

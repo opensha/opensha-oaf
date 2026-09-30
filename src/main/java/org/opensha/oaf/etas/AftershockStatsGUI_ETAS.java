@@ -3,6 +3,7 @@ package org.opensha.oaf.etas;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Dialog.ModalityType;
 import java.awt.geom.Point2D;
@@ -10,9 +11,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -39,6 +42,7 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.annotations.XYTextAnnotation;
 import org.jfree.chart.title.PaintScaleLegend;
 import org.jfree.data.Range;
+import org.json.simple.JSONValue;
 import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.chart.ui.TextAnchor;
 import org.opensha.commons.calc.magScalingRelations.magScalingRelImpl.WC1994_MagLengthRelationship;
@@ -73,12 +77,14 @@ import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.AbstractParameter;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
+
 import org.opensha.commons.param.constraint.ParameterConstraint;
 import org.opensha.commons.param.constraint.impl.DoubleConstraint;
 import org.opensha.commons.param.constraint.impl.RangeConstraint;
 import org.opensha.commons.param.editor.AbstractParameterEditor;
 import org.opensha.commons.param.editor.impl.NumericTextField;
 import org.opensha.commons.param.editor.impl.ParameterListEditor;
+import org.opensha.commons.param.editor.impl.ParameterListParameterEditor;
 import org.opensha.commons.param.event.ParameterChangeEvent;
 import org.opensha.commons.param.event.ParameterChangeListener;
 import org.opensha.commons.param.impl.BooleanParameter;
@@ -116,6 +122,7 @@ import com.google.common.io.Files;
 import com.google.common.primitives.Doubles;
 
 import org.opensha.oaf.rj.TectonicRegimeTable;
+import org.opensha.oaf.util.MarshalException;
 import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionCircle;
@@ -175,6 +182,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private String catalogFileName; // catalog file to use 
 	private boolean catalogFileGiven;
 	
+	private double aftershockRadiusFixedValue;
+	private boolean aftershockRadiusGiven;
+	
 	private boolean dataStartFixed;
 	private double dataStartFixedValue;
 	
@@ -185,6 +195,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private String forecastDuration = "week";	//for command line use
 	private Double forecastStartTime; //for command line use
 	
+	private String configurationFileName; 
+	private boolean configurationFileGiven; 
 
 	//this is needed to prevent long processing times/overloaded memory. If more than MAX_EARTHQUAKE_NUMBER aftershocks are retrieved from ComCat,
 	//the magnitude of completeness is increased to the size of the nth largest aftershock. Must be > 0  or you'll get a nullPoitnerException down the line.
@@ -435,7 +447,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private enum FitSourceType {
 		AFTERSHOCKS("Early aftershocks"),
 		POINT_SOURCE("Point source"),
-		SHAKEMAP("Shakemap finite source"),
+//		SHAKEMAP("Shakemap finite source"),
 		CUSTOM("Load from file");
 		
 		private String name;
@@ -457,6 +469,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	
 	private ButtonParameter publishAdvisoryButton;
 	
+	private ButtonParameter loadConfigurationButton;
+			
 	private JTabbedPane tabbedPane;
 	private JScrollPane consoleScroll;
 	
@@ -541,7 +555,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private int outputWidth = 65;
 	private int chartWidth = 750;
 	private int chartHeight = height;
-	private int sigDigits = 4;
+	private int sigDigits = 5;
 	
 	/* Initialize the GUI
 	 *  
@@ -598,12 +612,41 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				"Forecast Duration", EnumSet.allOf(ForecastDuration.class), ForecastDuration.YEAR, null);
 		forecastDurationParam.setInfo("Maximum computed forecast duration relative to forecast start time");
 		forecastDurationParam.addParameterChangeListener(this);
-		forecastParams.addParameter(forecastDurationParam);
+//		forecastParams.addParameter(forecastDurationParam);
 
 		plotAllDurationsParam = new BooleanParameter("Plot Week/Month/Year", true);	
 		plotAllDurationsParam.addParameterChangeListener(this);
 		plotAllDurationsParam.setInfo("Build plots for day, week, month, and year increments");
 //		forecastParams.addParameter(plotAllDurationsParam);
+		
+		
+//		timeWindow = new ParameterList();
+		
+		dataStartTimeParam = new DoubleParameter("Data Start Time", Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.valueOf(0d));
+		dataStartTimeParam.setUnits("Days");
+		dataStartTimeParam.setInfo("Relative to main shock origin time");
+		dataStartTimeParam.addParameterChangeListener(this);
+//		if(prForecastMode || prReportMode) {
+//		if(dataStartFixed) {
+//			dataStartTimeParam.setValue(dataStartFixedValue);
+//		}
+//		dataStartTimeParam.getEditor().refreshParamEditor();
+//		timeWindow.addParameter(dataStartTimeParam);
+
+		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 10*365d);
+		dataEndTimeParam.setUnits("Days");
+		dataEndTimeParam.setInfo("Relative to main shock origin time");
+		dataEndTimeParam.addParameterChangeListener(this);		
+//		timeWindow.addParameter(dataEndTimeParam);
+//		dataEndTimeParam.getEditor().refreshParamEditor();	
+		
+		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, Double.POSITIVE_INFINITY);
+		forecastEndTimeParam.setUnits("Days");
+		forecastEndTimeParam.addParameterChangeListener(this);
+//		timeWindow.addParameter(forecastEndTimeParam);
+		
+//		timeWindowEditParam = new ParameterListParameter("Data time window", timeWindow);
+//		forecastParams.addParameter(timeWindowEditParam);
 		
 		quickForecastButton = new ButtonParameter("Forecast using default settings", "Quick Forecast");
 		quickForecastButton.setInfo("Run all steps using default settings");
@@ -611,31 +654,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		quickForecastButton.getEditor().setEditorBorder(BorderFactory.createLineBorder(Color.black, 1));
 		forecastParams.addParameter(quickForecastButton);
 		
-		timeWindow = new ParameterList(); 
-		dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, Double.valueOf(0d));
 		
-//		if(prForecastMode || prReportMode) {
-		if(dataStartFixed) {
-			dataStartTimeParam.setValue(dataStartFixedValue);
-		} 
-		
-		dataStartTimeParam.setUnits("Days");
-		dataStartTimeParam.setInfo("Relative to main shock origin time");
-		dataStartTimeParam.addParameterChangeListener(this);
-		timeWindow.addParameter(dataStartTimeParam);
-		
-		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, Double.POSITIVE_INFINITY);
-		dataEndTimeParam.setUnits("Days");
-		dataEndTimeParam.setInfo("Relative to main shock origin time");
-		dataEndTimeParam.addParameterChangeListener(this);
-		timeWindow.addParameter(dataEndTimeParam);
-				
-		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, Double.POSITIVE_INFINITY);
-		forecastEndTimeParam.setUnits("Days");
-//		forecastEndTimeParam.addParameterChangeListener(this);
-//		timeWindow.addParameter(forecastEndTimeParam);
-		
-		timeWindowEditParam = new ParameterListParameter("Edit data time window", timeWindow);
 		
 		// these are inside region editor
 		regionTypeParam = new EnumParameter<AftershockStatsGUI_ETAS.RegionType>(
@@ -659,6 +678,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		radiusParam = new DoubleParameter("Radius", 0d, 10000d, Double.valueOf(20));
 		radiusParam.setUnits("km");
 		radiusParam.setInfo("Radius for collecting aftershocks in km");
+		if (aftershockRadiusGiven)
+			radiusParam.setValue(aftershockRadiusFixedValue);
+		
 		minLatParam = new DoubleParameter("Min Lat", -90d, 90d, Double.valueOf(0));
 		minLatParam.setInfo("Minimum latitude for rectangle");
 		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(0));
@@ -691,6 +713,19 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //		duplicateEventThresholdParam.setInfo("Set the minimum time after the mainshock in milliseconds, to avoid multiple mainshock solutions showing up as aftershocks");
 		
 		regionList = new ParameterList();
+		regionList.addParameter(regionTypeParam);
+		regionList.addParameter(radiusParam);
+		regionList.addParameter(minLatParam);
+		regionList.addParameter(maxLatParam);
+		regionList.addParameter(minLonParam);
+		regionList.addParameter(maxLonParam);
+		regionList.addParameter(regionCenterTypeParam);
+		regionList.addParameter(regionCenterLatParam);
+		regionList.addParameter(regionCenterLonParam);
+		regionList.addParameter(minDepthParam);
+		regionList.addParameter(maxDepthParam);
+		regionList.addParameter(maxCatalogNumberParam);
+		regionList.addParameter(dataStartTimeParam);
 		
 		regionEditParam = new ParameterListParameter("Edit Aftershock Zone", regionList);
 		regionEditParam.setInfo("Manually edit the aftershock collection region");
@@ -853,6 +888,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		computeAftershockParamsButton.setInfo("Estimate aftershock model from observed aftershocks");
 		computeAftershockParamsButton.getEditor().setEditorBorder(BorderFactory.createLineBorder(Color.black, 1));
 		fitParams.addParameter(computeAftershockParamsButton);
+		
+		loadConfigurationButton = new ButtonParameter("Load configuration", "Load Config");
+		loadConfigurationButton.addParameterChangeListener(this);
+		loadConfigurationButton.setInfo("Load the confgiguration and settings from a past forecast");
+		loadConfigurationButton.getEditor().setEditorBorder(BorderFactory.createLineBorder(Color.black, 1));
+
+		forecastParams.addParameter(loadConfigurationButton);
 		
 		/*
 		 * Fit params
@@ -1104,6 +1146,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 		mainPanel.add(paramsPanel, BorderLayout.WEST);
 		mainPanel.add(displayPanel, BorderLayout.CENTER);
+	
 
 		tabbedPane.setSelectedIndex(0);
 
@@ -1112,7 +1155,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		setVisible(true);
 		
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setTitle("Aftershock Forecaster (v2023.09.27)");
+		setTitle("Aftershock Forecaster (v2026.09.30)");
 		setLocationRelativeTo(null);
 		
 		workingDir = new File(System.getProperty("user.home"));
@@ -1143,11 +1186,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		plotAllDurationsParam = new BooleanParameter("Plot Week/Month/Year", true);	
 		
 		if (dataStartFixed)
-			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, Double.valueOf(dataStartFixedValue));
+			dataStartTimeParam = new DoubleParameter("Data Start Time", Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.valueOf(dataStartFixedValue));
 		else
-			dataStartTimeParam = new DoubleParameter("Data Start Time", 0d, 366, Double.valueOf(0d));
+			dataStartTimeParam = new DoubleParameter("Data Start Time", Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.valueOf(0d));
 		
-		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, Double.POSITIVE_INFINITY);
+		dataEndTimeParam = new DoubleParameter("Data End Time", 0d, 100*365d);
+//		dataStartTimeParam = new DoubleParameter("Data Start Time", Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
 		forecastEndTimeParam = new DoubleParameter("Forecast End Time", 0d, Double.POSITIVE_INFINITY);
 		
 		numberSimsParam = new IntegerParameter("number of ETAS simulations", 10000);
@@ -1169,6 +1213,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		maxLatParam = new DoubleParameter("Max Lat", -90d, 90d, Double.valueOf(0));
 		minLonParam = new DoubleParameter("Min Lon", -180d, 360d, Double.valueOf(0));
 		maxLonParam = new DoubleParameter("Max Lon", -180d, 360d, Double.valueOf(0));
+		
+		if (aftershockRadiusGiven)
+			radiusParam.setValue(aftershockRadiusFixedValue);
 		
 		minDepthParam = new DoubleParameter("Min Depth", 0d, 1000d, Double.valueOf(0));
 		maxDepthParam = new DoubleParameter("Max Depth", 0d, 1000d, Double.valueOf(1000d));
@@ -1330,27 +1377,109 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 		setChangeListenerEnabled(true);
 	}
+
+//	private void updateRegionParamList(RegionType type, RegionCenterType centerType) {
+//	    // 1) Get the ParameterListParameter and the *live* list instance the editor shows
+//	    ParameterListParameter listParam = (ParameterListParameter) regionEditParam;
+//	    ParameterList liveList = listParam.getValue();   // <-- canonical list; mutate *this*
+//
+//	    // 2) Mutate the live list in-place (do not build into a separate regionList instance)
+//	    liveList.clear();
+//	    liveList.addParameter(regionTypeParam);
+//
+//	    switch (type) {
+//	        case CIRCULAR:
+//	            liveList.addParameter(radiusParam);
+//	            break;
+//	        case CIRCULAR_WC94:
+//	            // do nothing
+//	            break;
+//	        case RECTANGULAR:
+//	            liveList.addParameter(minLatParam);
+//	            liveList.addParameter(maxLatParam);
+//	            liveList.addParameter(minLonParam);
+//	            liveList.addParameter(maxLonParam);
+//	            break;
+//	        default:
+//	            throw new IllegalStateException("Unknown region type: " + type);
+//	    }
+//
+//	    if (type == RegionType.CIRCULAR) {
+//	        liveList.addParameter(regionCenterTypeParam);
+//	        if (centerType == RegionCenterType.SPECIFIED) {
+//	            liveList.addParameter(regionCenterLatParam);
+//	            liveList.addParameter(regionCenterLonParam);
+//	        }
+//	    }
+//
+//	    liveList.addParameter(minDepthParam);
+//	    liveList.addParameter(maxDepthParam);
+//	    liveList.addParameter(maxCatalogNumberParam);
+//	    liveList.addParameter(dataStartTimeParam);
+//
+//	    // 3) Refresh the correct editor type and revalidate/repaint on the EDT
+//	    SwingUtilities.invokeLater(() -> {
+//	        // Use the base type to avoid incorrect casts
+//	        ParameterListParameterEditor editor =
+//	                      (ParameterListParameterEditor) listParam.getEditor();
+//
+//	        // If you *know* it's a ParameterListParameterEditor and need methods specific to it:
+//	        // ParameterListParameterEditor plpe = (ParameterListParameterEditor) editor;
+//
+//	        editor.refreshParamEditor();
+//
+//	        JComponent comp = editor.getComponent();
+//	        comp.revalidate();
+//	        comp.repaint();
+//
+//	        Container parent = comp.getParent();
+//	        if (parent != null) {
+//	            parent.revalidate();
+//	            parent.repaint();
+//	        }
+//	    });
+//
+//	    if (verbose) System.out.println("Region parameter box updated");
+//	}
 	
-	
+//	
+//	// Safe public entry: can be called from any thread
+//	public void safeUpdateRegionParams(RegionType type, RegionCenterType centerType) {
+//	    if (javax.swing.SwingUtilities.isEventDispatchThread()) {
+//	        updateRegionParamList(type, centerType);    // do it now
+//	    } else {
+//	        javax.swing.SwingUtilities.invokeLater(() -> updateRegionParamList(type, centerType));
+//	    }
+//	}
+
 	/* 
 	 * Utility functions for updating dynamic elements of the GUI, plot specifications, etc.
 	 */
 	private void updateRegionParamList(RegionType type, RegionCenterType centerType) {
-		regionList.clear();
-		regionList.addParameter(regionTypeParam);
 		
+//		//clear the type-dependent variables
+		radiusParam.getEditor().setVisible(false);
+		minLatParam.getEditor().setVisible(false);
+		maxLatParam.getEditor().setVisible(false);
+		minLonParam.getEditor().setVisible(false);
+		maxLonParam.getEditor().setVisible(false);
+		regionCenterTypeParam.getEditor().setVisible(false);
+		regionCenterLatParam.getEditor().setVisible(false);
+		regionCenterLonParam.getEditor().setVisible(false);
+		
+		// select just the ones you want
 		switch (type) {
 		case CIRCULAR:
-			regionList.addParameter(radiusParam);
+			radiusParam.getEditor().setVisible(true);
 			break;
 		case CIRCULAR_WC94:
 			// do nothing
 			break;
 		case RECTANGULAR:
-			regionList.addParameter(minLatParam);
-			regionList.addParameter(maxLatParam);
-			regionList.addParameter(minLonParam);
-			regionList.addParameter(maxLonParam);
+			minLatParam.getEditor().setVisible(true);
+			maxLatParam.getEditor().setVisible(true);
+			minLonParam.getEditor().setVisible(true);
+			maxLonParam.getEditor().setVisible(true);
 			break;
 
 		default:
@@ -1358,22 +1487,21 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 		
 		if (type == RegionType.CIRCULAR) {
-			regionList.addParameter(regionCenterTypeParam);
+			regionCenterTypeParam.getEditor().setVisible(true);
 			
 			if (centerType == RegionCenterType.SPECIFIED){
-				regionList.addParameter(regionCenterLatParam);
-				regionList.addParameter(regionCenterLonParam);
+				regionCenterLatParam.getEditor().setVisible(true);
+				regionCenterLonParam.getEditor().setVisible(true);
 			}
 		}
 		
-		regionList.addParameter(minDepthParam);
-		regionList.addParameter(maxDepthParam);
-		regionList.addParameter(maxCatalogNumberParam);
-		regionList.addParameter(dataStartTimeParam);
-		
 		regionEditParam.getEditor().refreshParamEditor();
+		
+		if (verbose) {
+			System.out.println("Region parameter box updated");
+		}
 	} 
-	
+
 	// for plots: how to scale the symbols by size?
 	private EvenlyDiscretizedFunc magSizeFunc;
 
@@ -1776,8 +1904,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else {
 				if (wcMagLen == null)
 					wcMagLen = new WC1994_MagLengthRelationship();
-				radius = 10d + 1.5*wcMagLen.getMedianLength(event.getMag()); //multiplied by 1.5 because length is already 2x radius
-				if(verbose) System.out.println("Collecting Aftershocks within 10 km + 3 WC94 Radii: "+ (float)radius + " km");
+				radius = 10d + 3*wcMagLen.getMedianLength(event.getMag()); //multiplied by a full 3 to catch unilateral ruptures
+				if(verbose) System.out.println("Collecting Aftershocks within 10 km + 3 WC94 Lengths: "+ (float)radius + " km");
 			}
 			
 			RegionCenterType centerType = regionCenterTypeParam.getValue();
@@ -1834,6 +1962,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				dataMaxDays = elapsedDays;
 				forecastStartDays = elapsedDays;
 			}
+			// make sure boolean gets checked in case this path was taken due to null
+			nowBoolean.setValue(true);
+			nowBoolean.getEditor().refreshParamEditor();
+			
 
 		} else if (dataEndTimeParam.getValue() == null){
 			forecastStartDays = forecastStartTimeParam.getValue();
@@ -1843,17 +1975,19 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			// set up to link endtime and start time.
 			forecastStartDays = forecastStartTimeParam.getValue();
 			dataMaxDays = forecastStartDays;
-			
 		}
 
-//		forecastStartTimeParam.setValue(round(forecastStartDays)); //why round?
 		forecastStartTimeParam.setValue(forecastStartDays);
+		forecastStartTimeParam.getEditor().refreshParamEditor();
+		
+		
 		if (forecastStartTimeParam.getValue() < dataStartTimeParam.getValue()) {
 			dataStartTimeParam.setValue(forecastStartTimeParam.getValue());
-			dataStartTimeParam.getEditor().refreshParamEditor();
+//			dataStartTimeParam.getEditor().refreshParamEditor();
 		}
-		forecastStartTimeParam.getEditor().refreshParamEditor();
-	
+		
+		dataEndTimeParam.setValue(forecastStartDays);
+		
 		if (mainshock != null) {
 			GregorianCalendar mainshockDate = mainshock.getOriginTimeCal();
 			mainshockDate.setTimeInMillis((long)(mainshock.getOriginTime() + forecastStartTimeParam.getValue()*ETAS_StatsCalc.MILLISEC_PER_DAY ));
@@ -1863,20 +1997,20 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			dateStartString.getEditor().refreshParamEditor();
 		}
 		
-//		forecastEndTimeParam.setValue(round(forecastStartDays + forecastDurationParam.getValue().getValueNumeric()));
 		forecastEndTimeParam.setValue((forecastStartDays + forecastDurationParam.getValue().getValueNumeric()));
-		forecastEndTimeParam.getEditor().refreshParamEditor();
+//		forecastEndTimeParam.getEditor().refreshParamEditor();
 
-		//check for data end time greater than current time and set to current time if smaller
-		if (elapsedDays < dataMaxDays){
-			if(verbose) System.out.println("Setting data end time and forecast start time to current time.");
-			dataMaxDays = elapsedDays;
-		}
-		validateParameter(dataMaxDays, "end time");
-		validateParameter(forecastStartDays, "forecast start time");
-
-		dataEndTimeParam.setValue(round(dataMaxDays));
-		dataEndTimeParam.getEditor().refreshParamEditor();				
+//		COMMENTED OUT 6/25/2026, may need to add exception checking 
+//		//check for data end time greater than current time and set to current time if smaller
+//		if (elapsedDays < dataMaxDays){
+//			if(verbose) System.out.println("Setting data end time and forecast start time to current time.");
+//			dataMaxDays = elapsedDays;
+//		}
+//		validateParameter(dataMaxDays, "end time");
+//		validateParameter(forecastStartDays, "forecast start time");
+		
+//		dataEndTimeParam.getEditor().refreshParamEditor();	
+//		dataStartTimeParam.getEditor().refreshParamEditor();	
 
 		if(verbose) System.out.println("dataStartTime = " + dataStartTimeParam.getValue() + 
 				" dataEndTime = " + dataEndTimeParam.getValue() +
@@ -1884,6 +2018,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		if(verbose) System.out.println("forecastStart = " + forecastStartTimeParam.getValue() +
 				" forecastEnd = " + forecastEndTimeParam.getValue() +
 				" forecastDuration = " + forecastDurationParam.getValue());
+		
+		// this was a lot, wait a beat for refresh
+
 	}
 	
 	private void wrapLongitudes(boolean wrap){
@@ -1949,17 +2086,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 			TectonicRegimeTable regime_table = new TectonicRegimeTable();
 			
-			if(!commandLine) {
+			if(!commandLine)
 				consoleScroll.repaint();
-				String regimeName = regime_table.get_strec_name(mainshock.getHypocenterLocation().getLatitude(), mainshock.getHypocenterLocation().getLongitude());
-				regime = TectonicRegime.forName(regimeName);
-			} else {
-//				regime = TectonicRegime.GLOBAL_AVERAGE;
-				// use actual regime
-				String regimeName = regime_table.get_strec_name(mainshock.getHypocenterLocation().getLatitude(), mainshock.getHypocenterLocation().getLongitude());
-				regime = TectonicRegime.forName(regimeName);
-
-			}
+			
+			//String regimeName = regime_table.get_strec_name(mainshock.getHypocenterLocation().getLatitude(), mainshock.getHypocenterLocation().getLongitude());
+			// re-assign the regime from AS centroid location, when aftershocks are loaded.
+			String regimeName = regime_table.get_strec_name(mainshock.getHypocenterLocation().getLatitude(), mainshock.getHypocenterLocation().getLongitude());
+			regime = TectonicRegime.forName(regimeName);
+			
 					
 		} catch (RuntimeException e) {
 			System.out.println("Error fetching generic params. Assigning global average values");
@@ -1979,42 +2113,20 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 		if(verbose) System.out.println("Generic params for "+regime+": "+genericParams);
 		
-		updateParameterGenericRanges();
-//		amsValRangeParam.setValue(new Range(round(genericParams.get_a()-3*genericParams.get_aSigma(),2), round(genericParams.get_a()+3*genericParams.get_aSigma(),2)));
-//		aValRangeParam.setValue(new Range(round(genericParams.get_a()-3*genericParams.get_aSigma(),2), round(genericParams.get_a()+3*genericParams.get_aSigma(),2)));
-//		
-//		// watch out for p<0
-//		double minp = genericParams.get_p()-3*genericParams.get_pSigma();
-//		pValRangeParam.setValue(new Range(Math.max(0.1, round(minp,2)), round(genericParams.get_p()+3*genericParams.get_pSigma(),2)));
-//		
-//		// watch out for c < 1e-5
-//		double minc = genericParams.get_c()/Math.pow(10, 3*genericParams.get_logcSigma());
-//		cValRangeParam.setValue(new Range(Math.min(1e-5, round(minc,sigDigits)),
-//				Math.min(1, round(genericParams.get_c()*Math.pow(10, 3*genericParams.get_logcSigma()),sigDigits))));
-//		
-//		bParam.setValue(round(genericParams.get_b(),2));
-////		if(!commandLine)
-//		bParam.getEditor().refreshParamEditor();
-//		
-//		magRefParam.setValue(round(genericParams.get_refMag(),2));
-//		magRefParam.getEditor().refreshParamEditor();
+		
+		updateParameterGenericRanges(); //this one resets the ranges 
+//			resetFitConstraints(genericParams); //this one also resets the ranges, and the call heirarchies are similar...
 		
 		tectonicRegimeParam.setValue(regime);
 		tectonicRegimeParam.getEditor().refreshParamEditor();
 		
-		
-		
-//		if (commandLine)
-//			setMagComplete(4.5);
-//		else
-			setMagComplete();
+		setMagComplete();
 
 		// the prSequence is hyper productive, and supercritical. an adjustment to the Mmax.
 		if (prForecastMode) {
 			genericParams.maxMag = 7.05;
 		}
 		
-		resetFitConstraints(genericParams);
 		updateForecastTimes();
 		
 		
@@ -2031,7 +2143,28 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 	} //end setupGUI
 	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	// TODO: combine the two following functions into one -- lots of redundant code
+	// make sure that the updates are reflected in the plots, and that Mc and b-value can be entered manually.
 	private void setMagComplete(double mc){
+
 		double b_value = 1;
 		
 		if (mcFixed) {
@@ -2050,39 +2183,42 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 		mcParam.setValue(round(mc,2));
 		mcParam.getEditor().refreshParamEditor();
+		
 		bParam.setValue(round(b_value,2));
 		bParam.getEditor().refreshParamEditor();
 
 		link_alpha(); //reset alpha based on b
-		
-//		printTip(2);
-
 	}
 	
 	private void setMagComplete(){
-		// this routine fits by b-value stability. Ogata&Katsura simultaneous Mc and b is set with a different routine.
+		// if neither b nor mc is given, this routine this routine fits by b-value stability and is called during the initial fetch.  
+		//		  	Ogata&Katsura simultaneous Mc and b is set with a different routine?
 		
 		aftershockMND = ObsEqkRupListCalc.getMagNumDist(aftershocks, -3.05, 131, 0.1);
-		double mc = 0;
-		double b_value = 1.0;
-		double b_sigma = 0.1;
-		
-		
+		double mc;
+		double b_value;
+		double b_sigma;
 		
 		// do it by the Ogata and Katsura method
 		if (aftershocks.size() > 0){
 			if (genericParams != null){
 				b_value = genericParams.get_b();
 				b_sigma = genericParams.get_bSigma();
+			} else {
+				b_value = 1.0;	//starting guesses
+				b_sigma = 0.1;	//starting guesses?
 			}
-			ogataMND = new OgataMagFreqDist(aftershocks, b_value, b_sigma); //compute entire-magnitude-range Mc with b fixed 
+				
+			ogataMND = new OgataMagFreqDist(aftershocks, b_value, b_sigma);  
 			
 			// iterate to a stable estimate solution
-			mc = ogataMND.calculateMcWithFixedB(b_value);
+			mc = ogataMND.calculateMcWithFixedB(b_value); //compute entire-magnitude-range Mc with b fixed
+			
 			if(D) System.out.println("mc: " + mc + " b: " + b_value);
 
 		} else {
-//		 	mc = genericParams.get_refMag() + 0.5;
+			b_value = 1.0;
+			b_sigma = 0.1;
 			mc = genericParams.get_refMag();
 		}
 		
@@ -2090,6 +2226,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			mc = mcFixedValue;
 			System.out.println("overriding to mc: " + mc );
 		}
+		
 		if (bFixed) {
 			b_value = bFixedValue;
 			System.out.println("overriding to b: " + b_value);
@@ -2110,6 +2247,20 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 //		printTip(2);
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	private void plotAftershockHypocs() {
 		List<PlotElement> funcs = Lists.newArrayList();
@@ -2231,12 +2382,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 		
 		setupGP(epicenterGraph);
- 
-
-      			
-			
-		
-	}
+ 	}
 	
 	private void plotMFDs(IncrementalMagFreqDist mfd, double magComplete) {
 		if(D) System.out.println("start plotMFDs...");
@@ -2283,12 +2429,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 		
 		// add Ogata entire-magnitude-range fit
-			if (ogataMND != null){
-				EvenlyDiscretizedFunc fitEMR = ogataMND.getCumulativeMND(plotMinMag, genericParams.maxMag, magPrecisionParam.getValue());
-				fitEMR.setName("Model"); 
-				funcs.add(fitEMR);
-				chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, bayesian_color));
-			}
+		if (ogataMND != null){
+			EvenlyDiscretizedFunc fitEMR = ogataMND.getCumulativeMND(plotMinMag, genericParams.maxMag, magPrecisionParam.getValue());
+			fitEMR.setName("Model"); 
+			funcs.add(fitEMR);
+			chars.add(new PlotCurveCharacterstics(PlotLineType.DASHED, 2f, bayesian_color));
+		}
 		//
 			
 		double plotMinY = 0.9d;
@@ -2413,7 +2559,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		else
 			magTimeGraph.setPlotSpec(spec);
 		
-		magTimeGraph.setX_AxisRange(0.001, dataEndTimeParam.getValue()+0.75);
+		magTimeGraph.setX_AxisRange(0.0, forecastStartTimeParam.getValue()+0.75);
 		magTimeGraph.setY_AxisRange(Math.max(0, magTrack.getMin()-1d), magTrack.getMax()+1d);
 		setupGP(magTimeGraph);
 		
@@ -2690,7 +2836,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			regionCenterLonParam.setValue(lonTrack.getAverage());
 			regionCenterLonParam.getEditor().refreshParamEditor();
 
-			radiusParam.setValue((latTrack.getMax()-latTrack.getMin()+2*regBuff)/2d*111.111);
+			// replace with the wells and coppersmith for the mainshock
+			if (wcMagLen == null)
+				wcMagLen = new WC1994_MagLengthRelationship();
+			double radius = 10d + 3*wcMagLen.getMedianLength(mainshock.getMag()); //multiplied by 3 to catch unilateral ruptures
+			radiusParam.setValue(radius);
 			radiusParam.getEditor().refreshParamEditor();
 			
 			region = buildRegion(largestShock, getCentroid());
@@ -2882,7 +3032,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				bayesianLogC = bayesianModel.getPDF_logc();
 				
 				if(bayesianAms != null)
-					bayesianAms.setName("Sequence-specificific");
+					bayesianAms.setName("Sequence-specific");
 				if(bayesianA != null)
 					bayesianA.setName("Sequence-specific");
 				if(bayesianP != null)
@@ -3031,6 +3181,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	
 	private volatile boolean stopRequested = false;	//this should all be revised to use an Executor or something
 	private volatile boolean pauseRequested = false;	//but this works for now at keeping UX pretty smooth
+	
 	private class CalcRunnable implements Runnable {
 		private CalcProgressBar progress;
 		private CalcStep[] steps;
@@ -3240,544 +3391,988 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 	}
 
+	// // // // define runnable steps // // //
+	private CalcProgressBar progress = new CalcProgressBar(this, "Progress", "Intializing...", false);
+
+
+	CalcStep updateForecastStartTimeStep = new CalcStep("Updating",  "Updating forecast start time", new Runnable() {
+		@Override
+		public void run() {
+		//		if(verbose) System.out.println("Updating forecast start time");
+			if (forecastStartTimeParam.getValue() < dataStartTimeParam.getValue()) {
+				dataStartTimeParam.setValue(forecastStartTimeParam.getValue());
+				dataStartTimeParam.getEditor().refreshParamEditor();
+			}
+
+			if(!prReportMode) {
+				setEnableParamsPostFetch(false);
+			}
+
+			try{
+				if(!prReportMode) {
+					dataEndTimeParam.setValue(forecastStartTimeParam.getValue());
+					dataEndTimeParam.getEditor().refreshParamEditor();
+				}
+				forecastEndTimeParam.setValue(forecastStartTimeParam.getValue() + forecastDurationParam.getValue().getValueNumeric());
+				forecastEndTimeParam.getEditor().refreshParamEditor();
+
+				if (mainshock != null) {
+					GregorianCalendar mainshockDate = mainshock.getOriginTimeCal();
+					mainshockDate.setTimeInMillis((long)(mainshock.getOriginTime() + forecastStartTimeParam.getValue()*ETAS_StatsCalc.MILLISEC_PER_DAY ));
+					DateFormat df = new SimpleDateFormat();
+					dateStartString.setValue(df.format(mainshockDate.getTime()));
+					dateStartString.getEditor().refreshParamEditor();
+				} 
+
+			} finally {
+			}
+			refreshTimeWindowEditor();
+		}
+	}, true);
+	
+	CalcStep updateRegionStep = new CalcStep("Updating",  "Updating forecast region", new Runnable() {
+		@Override
+		public void run() {
+			if(verbose) System.out.println("Updating forecast region");
+			updateRegionParamList(regionTypeParam.getValue(), regionCenterTypeParam.getValue());
+			
+			
+		}
+	}, true);
+
+	CalcStep updateNowBooleanStep = new CalcStep("Updating",  "Updating forecast start time", new Runnable() {
+		@Override
+		public void run() {
+			if(verbose) System.out.println("Updating start now flag");
+
+			System.out.println(nowBoolean.getValue());
+
+			if(nowBoolean.getValue()) {
+				if (mainshock != null) {
+					forecastStartTimeParam.setValue( (double) (System.currentTimeMillis() - mainshock.getOriginTime())/ETAS_StatsCalc.MILLISEC_PER_DAY);
+					if (forecastStartTimeParam.getValue() < dataStartTimeParam.getValue()) {
+						dataStartTimeParam.setValue(forecastStartTimeParam.getValue());
+						dataStartTimeParam.getEditor().refreshParamEditor();
+					}
+					forecastStartTimeParam.getEditor().refreshParamEditor();
+
+				}
+				DateFormat df = new SimpleDateFormat();
+				dateStartString.setValue(df.format(System.currentTimeMillis()));
+				dateStartString.getEditor().refreshParamEditor();
+
+			} else {
+				if (mainshock == null) {
+					dateStartString.setValue("");
+					dateStartString.getEditor().refreshParamEditor();
+				}
+			}
+			refreshTimeWindowEditor();
+		}
+	}, true);
+	
+	
+	// fetch the mainshock and aftershocks from the web
+	CalcStep fetchCatalogStep = new CalcStep("Fetching Events",
+			"Contacting USGS ComCat Webservice. This is occasionally slow. If it fails, trying again often works.", 
+			new Runnable() {
+		@Override
+		public void run() {
+			if (dataEndTimeParam.getValue() == null) {
+				dataEndTimeParam.setValue(dataEndTimeParam.getMax());
+//				dataEndTimeParam.setValue(forecastStartTimeParam.getValue());
+			}
+
+			fetchEvents();
+			
+//			
+			if (mainshock == null) stopRequested=true;
+		}
+	}, true);
+
+	// load the mainshock and aftershocks from a file 
+	CalcStep loadCatalogStep = new CalcStep("Fetching Events From File", "loading catalog from file", 
+			 new Runnable() {
+		@Override
+		public void run() {
+			try {
+				System.out.println("Loading Catalog from file: " + catalogFileName);
+
+				final File[] file = new File[1];
+
+				if (catalogFileGiven){
+					String filename = new String(workingDir + "/" + catalogFileName);
+					file[0] = new File(filename);
+				} else {
+					throw new IllegalStateException("catalog file not given.");
+				}
+
+				loadCatalog(file[0]);
+
+				if (!commandLine)
+					setEnableParamsPostFetch(false);
+
+			} catch (IOException e) {
+				ExceptionUtils.throwAsRuntimeException(e);
+			}
+		}
+	}, true);
+
+	// load the forecast configuration from a file 
+	CalcStep loadConfigurationStep = new CalcStep("Loading Configuration", "loading configuration from file", 
+			new Runnable() {
+		@Override
+		public void run() {
+			ETAS_Configuration Configuration = new ETAS_Configuration();
+			
+			try {
+				System.out.println("Loading Configuration from file: " + configurationFileName);
+
+				final File[] file = new File[1];
+
+				if (configurationFileGiven){
+					String filename = new String(workingDir + "/" + configurationFileName);
+					file[0] = new File(filename);
+				} else {
+					throw new IllegalStateException("configuration file not given.");
+				}
+
+				//
+				Configuration = new ETAS_Configuration(file[0]);
+				if(verbose)
+					System.out.println(Configuration);
+
+			} catch (Exception e) {
+				ExceptionUtils.throwAsRuntimeException(e);
+			}
+
+//			// add parameters
+			//
+			// BOOLEAN (primitive)
+			//
+			mcFixed = Configuration.getBooleanParameter("mcFixed");
+			bFixed = Configuration.getBooleanParameter("bFixed");
+			catalogFileGiven = Configuration.getBooleanParameter("catalogFileGiven");
+			dataStartFixed = Configuration.getBooleanParameter("dataStartFixed");
+			configurationFileGiven = Configuration.getBooleanParameter("configurationFileGiven");
+
+			//
+			// DOUBLE (primitive)
+			//
+			mcFixedValue = Configuration.getDoubleParameter("mcFixedValue");
+			bFixedValue = Configuration.getDoubleParameter("bFixedValue");
+			dataStartFixedValue = Configuration.getDoubleParameter("dataStartFixedValue");
+			forecastStartTime = Configuration.getDoubleParameter("forecastStartTime");
+
+			//
+			// STRING (primitive)
+			//
+			catalogFileName = Configuration.getParameter("catalogFileName");
+			eventID = Configuration.getParameter("eventID");
+			forecastDuration = Configuration.getParameter("forecastDuration");
+			configurationFileName = Configuration.getParameter("configurationFileName");
+
+			//
+			// INTEGER PARAMETER
+			//
+			maxCatalogNumberParam.setValue(Configuration.getIntParameter("maxCatalogNumberParam"));
+			numberSimsParam.setValue(Configuration.getIntParameter("numberSimsParam"));
+			amsValNumParam.setValue(Configuration.getIntParameter("amsValNumParam"));
+			muValNumParam.setValue(Configuration.getIntParameter("muValNumParam"));
+			aValNumParam.setValue(Configuration.getIntParameter("aValNumParam"));
+			pValNumParam.setValue(Configuration.getIntParameter("pValNumParam"));
+			cValNumParam.setValue(Configuration.getIntParameter("cValNumParam"));
+
+			//
+			// STRING PARAMETER
+			//
+			eventIDParam.setValue(Configuration.getParameter("eventIDParam"));
+			dateStartString.setValue(Configuration.getParameter("dateStartString"));
+
+			//
+			// DOUBLE PARAMETER
+			//
+			dataStartTimeParam.setValue(Configuration.getDoubleParameter("dataStartTimeParam"));
+			dataEndTimeParam.setValue(Configuration.getDoubleParameter("dataEndTimeParam"));
+
+			regionCenterLatParam.setValue(Configuration.getDoubleParameter("regionCenterLatParam"));
+			regionCenterLonParam.setValue(Configuration.getDoubleParameter("regionCenterLonParam"));
+			radiusParam.setValue(Configuration.getDoubleParameter("radiusParam"));
+			minLatParam.setValue(Configuration.getDoubleParameter("minLatParam"));
+			maxLatParam.setValue(Configuration.getDoubleParameter("maxLatParam"));
+			minLonParam.setValue(Configuration.getDoubleParameter("minLonParam"));
+			maxLonParam.setValue(Configuration.getDoubleParameter("maxLonParam"));
+
+			mcParam.setValue(Configuration.getDoubleParameter("mcParam"));
+			magPrecisionParam.setValue(Configuration.getDoubleParameter("magPrecisionParam"));
+			magRefParam.setValue(Configuration.getDoubleParameter("magRefParam"));
+
+			rmaxParam.setValue(Configuration.getDoubleParameter("rmaxParam"));
+			muDurationParam.setValue(Configuration.getDoubleParameter("muDurationParam"));
+			muValParam.setValue(Configuration.getDoubleParameter("muValParam"));
+			amsValParam.setValue(Configuration.getDoubleParameter("amsValParam"));
+			aValParam.setValue(Configuration.getDoubleParameter("aValParam"));
+			pValParam.setValue(Configuration.getDoubleParameter("pValParam"));
+			cValParam.setValue(Configuration.getDoubleParameter("cValParam"));
+			bParam.setValue(Configuration.getDoubleParameter("bParam"));
+			alphaParam.setValue(Configuration.getDoubleParameter("alphaParam"));
+
+			mapLevelParam.setValue(Configuration.getDoubleParameter("mapLevelParam"));
+			mapScaleParam.setValue(Configuration.getDoubleParameter("mapScaleParam"));
+			mapGridSpacingParam.setValue(Configuration.getDoubleParameter("mapGridSpacingParam"));
+			mapPOEParam.setValue(Configuration.getDoubleParameter("mapPOEParam"));
+
+			forecastStartTimeParam.setValue(Configuration.getDoubleParameter("forecastStartTimeParam"));
+			forecastEndTimeParam.setValue(Configuration.getDoubleParameter("forecastEndTimeParam"));
+
+			//
+			// BOOLEAN PARAMETER
+			//
+			nowBoolean.setValue(Configuration.getBooleanParameter("nowBoolean"));
+			plotAllDurationsParam.setValue(Configuration.getBooleanParameter("plotAllDurationsParam"));
+			autoMcParam.setValue(Configuration.getBooleanParameter("autoMcParam"));
+			fitMSProductivityParam.setValue(Configuration.getBooleanParameter("fitMSProductivityParam"));
+			plotSpecificOnlyParam.setValue(Configuration.getBooleanParameter("plotSpecificOnlyParam"));
+			vs30Param.setValue(Configuration.getBooleanParameter("vs30Param"));
+			timeDepMcParam.setValue(Configuration.getBooleanParameter("timeDepMcParam"));
+			writeStochasticEventSets.setValue(Configuration.getBooleanParameter("writeStochasticEventSets"));
+
+			//
+			// RANGE PARAMETERS (reconstruct from Min/Max)
+			//
+			amsValRangeParam.setValue(
+			    new Range(Configuration.getDoubleParameter("amsValRangeParamMin"),
+			              Configuration.getDoubleParameter("amsValRangeParamMax"))
+			);
+
+			muValRangeParam.setValue(
+			    new Range(Configuration.getDoubleParameter("muValRangeParamMin"),
+			              Configuration.getDoubleParameter("muValRangeParamMax"))
+			);
+
+			aValRangeParam.setValue(
+			    new Range(Configuration.getDoubleParameter("aValRangeParamMin"),
+			              Configuration.getDoubleParameter("aValRangeParamMax"))
+			);
+
+			pValRangeParam.setValue(
+			    new Range(Configuration.getDoubleParameter("pValRangeParamMin"),
+			              Configuration.getDoubleParameter("pValRangeParamMax"))
+			);
+
+			cValRangeParam.setValue(
+			    new Range(Configuration.getDoubleParameter("cValRangeParamMin"),
+			              Configuration.getDoubleParameter("cValRangeParamMax"))
+			);
+
+			//
+			// ENUM PARAMETERS
+			//
+			regionCenterTypeParam.setValue(
+			    RegionCenterType.valueOf(Configuration.getParameter("regionCenterTypeParam"))
+			);
+
+			tectonicRegimeParam.setValue(
+			    TectonicRegime.valueOf(Configuration.getParameter("tectonicRegimeParam"))
+			);
+
+			forecastDurationParam.setValue(
+			    ForecastDuration.valueOf(Configuration.getParameter("forecastDurationParam"))
+			);
+
+			intensityTypeParam.setValue(
+			    IntensityType.valueOf(Configuration.getParameter("intensityTypeParam"))
+			);
+
+			mapTypeParam.setValue(
+			    MapType.valueOf(Configuration.getParameter("mapTypeParam"))
+			);
+
+			fitSourceTypeParam.setValue(
+			    FitSourceType.valueOf(Configuration.getParameter("fitSourceTypeParam"))
+			);
+
+			advisoryDurationParam.setValue(
+			    ForecastDuration.valueOf(Configuration.getParameter("advisoryDurationParam"))
+			);
+
+			//
+			// SPECIAL CASE ENUM
+			//
+			regionTypeParam.setValue(
+			    RegionType.valueOf(Configuration.getParameter("regionTypeParam"))
+			 );
+
+			if(verbose)
+				System.out.println(Configuration);
+
+			// what should be run? how should this interact with fetch of new data?
+			if (!commandLine)
+				setEnableParamsPostFetch(false);
+
+
+			
+		}
+	}, true);
+		
+
+	// save the forecast configuration to a file 
+	CalcStep saveConfigurationStep = new CalcStep("Loading Configuration", "loading configuration from file", 
+			new Runnable() {
+		@Override
+		public void run() {
+			ETAS_Configuration Configuration = new ETAS_Configuration();
+
+//			// add parameters
+			//
+			// BOOLEAN (primitive)
+			//
+			Configuration.addParameter("mcFixed", mcFixed);
+			Configuration.addParameter("bFixed", bFixed);
+			Configuration.addParameter("catalogFileGiven", catalogFileGiven);
+			Configuration.addParameter("dataStartFixed", dataStartFixed);
+			Configuration.addParameter("configurationFileGiven", configurationFileGiven);
+
+			//
+			// DOUBLE (primitive)
+			//
+			Configuration.addParameter("mcFixedValue", mcFixedValue);
+			Configuration.addParameter("bFixedValue", bFixedValue);
+			Configuration.addParameter("dataStartFixedValue", dataStartFixedValue);
+			Configuration.addParameter("forecastStartTime", forecastStartTime);
+
+			//
+			// STRING (primitive)
+			//
+			Configuration.addParameter("catalogFileName", catalogFileName);
+			Configuration.addParameter("eventID", eventID);
+			Configuration.addParameter("forecastDuration", forecastDuration);
+			Configuration.addParameter("configurationFileName", configurationFileName);
+
+			//
+			// INTEGER PARAMETER
+			//
+			Configuration.addParameter("maxCatalogNumberParam", maxCatalogNumberParam.getValue());
+			Configuration.addParameter("numberSimsParam", numberSimsParam.getValue());
+			Configuration.addParameter("amsValNumParam", amsValNumParam.getValue());
+			Configuration.addParameter("muValNumParam", muValNumParam.getValue());
+			Configuration.addParameter("aValNumParam", aValNumParam.getValue());
+			Configuration.addParameter("pValNumParam", pValNumParam.getValue());
+			Configuration.addParameter("cValNumParam", cValNumParam.getValue());
+
+			//
+			// STRING PARAMETER
+			//
+			Configuration.addParameter("eventIDParam", eventIDParam.getValue());
+			Configuration.addParameter("dateStartString", dateStartString.getValue());
+
+			//
+			// DOUBLE PARAMETER
+			//
+			Configuration.addParameter("dataStartTimeParam", dataStartTimeParam.getValue());
+			Configuration.addParameter("dataEndTimeParam", dataEndTimeParam.getValue());
+			Configuration.addParameter("regionCenterLatParam", regionCenterLatParam.getValue());
+			Configuration.addParameter("regionCenterLonParam", regionCenterLonParam.getValue());
+			Configuration.addParameter("radiusParam", radiusParam.getValue());
+			Configuration.addParameter("minLatParam", minLatParam.getValue());
+			Configuration.addParameter("maxLatParam", maxLatParam.getValue());
+			Configuration.addParameter("minLonParam", minLonParam.getValue());
+			Configuration.addParameter("maxLonParam", maxLonParam.getValue());
+			Configuration.addParameter("mcParam", mcParam.getValue());
+			Configuration.addParameter("magPrecisionParam", magPrecisionParam.getValue());
+			Configuration.addParameter("magRefParam", magRefParam.getValue());
+			Configuration.addParameter("rmaxParam", rmaxParam.getValue());
+			Configuration.addParameter("muDurationParam", muDurationParam.getValue());
+			Configuration.addParameter("muValParam", muValParam.getValue());
+			Configuration.addParameter("amsValParam", amsValParam.getValue());
+			Configuration.addParameter("aValParam", aValParam.getValue());
+			Configuration.addParameter("pValParam", pValParam.getValue());
+			Configuration.addParameter("cValParam", cValParam.getValue());
+			Configuration.addParameter("bParam", bParam.getValue());
+			Configuration.addParameter("alphaParam", alphaParam.getValue());
+			Configuration.addParameter("mapLevelParam", mapLevelParam.getValue());
+			Configuration.addParameter("mapScaleParam", mapScaleParam.getValue());
+			Configuration.addParameter("mapGridSpacingParam", mapGridSpacingParam.getValue());
+			Configuration.addParameter("mapPOEParam", mapPOEParam.getValue());
+			Configuration.addParameter("forecastStartTimeParam", forecastStartTimeParam.getValue());
+			Configuration.addParameter("forecastEndTimeParam", forecastEndTimeParam.getValue());
+
+			//
+			// BOOLEAN PARAMETER
+			//
+			Configuration.addParameter("nowBoolean", nowBoolean.getValue());
+			Configuration.addParameter("plotAllDurationsParam", plotAllDurationsParam.getValue());
+			Configuration.addParameter("autoMcParam", autoMcParam.getValue());
+			Configuration.addParameter("fitMSProductivityParam", fitMSProductivityParam.getValue());
+			Configuration.addParameter("plotSpecificOnlyParam", plotSpecificOnlyParam.getValue());
+			Configuration.addParameter("vs30Param", vs30Param.getValue());
+			Configuration.addParameter("timeDepMcParam", timeDepMcParam.getValue());
+			Configuration.addParameter("writeStochasticEventSets", writeStochasticEventSets.getValue());
+
+			//
+			// RANGE PARAMETERS (expanded → Min/Max)
+			//
+			Configuration.addParameter("amsValRangeParamMin", amsValRangeParam.getValue().getLowerBound());
+			Configuration.addParameter("amsValRangeParamMax", amsValRangeParam.getValue().getUpperBound());
+
+			Configuration.addParameter("muValRangeParamMin", muValRangeParam.getValue().getLowerBound());
+			Configuration.addParameter("muValRangeParamMax", muValRangeParam.getValue().getUpperBound());
+
+			Configuration.addParameter("aValRangeParamMin", aValRangeParam.getValue().getLowerBound());
+			Configuration.addParameter("aValRangeParamMax", aValRangeParam.getValue().getUpperBound());
+
+			Configuration.addParameter("pValRangeParamMin", pValRangeParam.getValue().getLowerBound());
+			Configuration.addParameter("pValRangeParamMax", pValRangeParam.getValue().getUpperBound());
+
+			Configuration.addParameter("cValRangeParamMin", cValRangeParam.getValue().getLowerBound());
+			Configuration.addParameter("cValRangeParamMax", cValRangeParam.getValue().getUpperBound());
+
+			//
+			// ENUM PARAMETERS
+			//
+			Configuration.addParameter("regionCenterTypeParam", regionCenterTypeParam.getValue().toString());
+			Configuration.addParameter("tectonicRegimeParam", tectonicRegimeParam.getValue().toString());
+			Configuration.addParameter("forecastDurationParam", forecastDurationParam.getValue().toString());
+			Configuration.addParameter("intensityTypeParam", intensityTypeParam.getValue().toString());
+			Configuration.addParameter("mapTypeParam", mapTypeParam.getValue().toString());
+			Configuration.addParameter("fitSourceTypeParam", fitSourceTypeParam.getValue().toString());
+			Configuration.addParameter("advisoryDurationParam", advisoryDurationParam.getValue().toString());
+			Configuration.addParameter("regionTypeParam", regionTypeParam.getValue().toString());
+
+			
+			if(verbose)
+				System.out.println(Configuration);
+
+			try {
+				System.out.println("Saving Configuration to file: " + configurationFileName);
+
+				final File[] file = new File[1];
+
+				if (configurationFileGiven){
+					String filename = new String(workingDir + "/" + configurationFileName);
+					file[0] = new File(filename);
+				} else {
+					throw new IllegalStateException("configuration file not given.");
+				}
+
+				//write config file
+				Configuration.writeConfigurationFile(file[0]);
+				
+
+			} catch (Exception e) {
+				ExceptionUtils.throwAsRuntimeException(e);
+			}
+			
+		}
+	}, true);
+	
+	//	Set the mainshock  
+	CalcStep setMainshockStep = new CalcStep("Initializing Model", "Collecting mainshock information...", 
+			 new Runnable() {
+		@Override
+		public void run() {
+			setMainshock(mainshock);
+		}
+	}, true);
+
+	// run post-fetch calculations
+	CalcStep postFetchCalcStep = new CalcStep("Initializing Model", "Computing sequence statistics...", 
+			 new Runnable() {
+		@Override
+		public void run() {
+			doPostFetchCalculations();
+		}
+	}, true);
+	
+	// compute b value and magnitude of completeness simultaneously 
+	CalcStep computeBStep = new CalcStep("Initializing Model", "Computing b-value and magnitude of completeness...",
+			 new Runnable() {
+		@Override
+		public void run() {
+			if (aftershocks.size() > 0){
+				ogataMND = new OgataMagFreqDist(aftershocks, genericModel.get_b(), genericModel.get_bSigma());
+
+				if(verbose) System.out.println(ogataMND + " " + ogataMND.goodnessOfFit());
+
+				Double b, mc;
+				b = ogataMND.get_bValue();
+				mc = ogataMND.get_Mc();
+				validateParameter(mc, "Mc");
+
+				bParam.setValue(round(b,2));
+				bParam.getEditor().refreshParamEditor();
+
+				mcParam.setValue(round(mc,2));
+				mcParam.getEditor().refreshParamEditor();
+
+				autoMcParam.setValue(false);
+				computeBButton.setButtonText("Reset Mc");
+				computeBButton.setInfo("Estimate Mc from b-value stability");
+				computeBButton.getEditor().refreshParamEditor();
+
+				//				if(seqSpecModel != null)
+				//					seqSpecModel.set_b(b);
+				if(bayesianModel != null)
+					bayesianModel.set_b(b);
+
+				link_alpha(); //reset the alpha parameter, too
+
+				//				tabbedPane.setSelectedIndex(mag_num_tab_index);
+			} else {
+				System.err.println("Not enough data to compute b-value");
+			}
+			setEnableParamsPostComputeB(true);
+		}
+	}, true);
+
+	// post Fetch plots
+	CalcStep postFetchPlotStep = new CalcStep("Plotting", "Building sequence summary plots...",
+			 new Runnable() {
+		@Override
+		public void run() {
+			if(!commandLine)
+				doPostFetchPlots();
+			//includes MFD plot
+		}
+	}, true);
+
+	// update the model
+	CalcStep updateModelStep = new CalcStep("Updating Model", "Updating generic model parameters...",
+			 new Runnable() {
+		@Override
+		public void run() {
+			// if a generic model has already been computed, update it to reflect new Mc/Mref productivity adjustment
+			if(genericModel != null){
+				if(verbose) System.out.println("Adjusting generic productivity to reflect Mc change...");
+
+				// not sure if I need this
+				genericModel = new ETAS_AftershockModel_Generic(mainshock, aftershocks, genericParams, 
+						dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+						forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), mcParam.getValue(),
+						genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(), validate);
+
+//				resetFitConstraints(genericParams); //choose one
+				updateParameterGenericRanges();		//choose one
+				
+				setEnableParamsPostAftershockParams(false);
+			}
+		}
+	}, true);
+	
+	// compute the sequence-specific model. This has been disabled for speed, since it is not used in the forecast
+	CalcStep computeSequenceSpecificStep = new CalcStep("Estimating ETAS parameters",
+			"Computing sequence-specific model. This may take some time...", 
+			 new Runnable() {
+				@Override
+				public void run() {
+//					Range amsRange = amsValRangeParam.getValue();
+//					int amsNum = amsValNumParam.getValue();
+//					validateRange(amsRange, amsNum, "ams-value");
+			//
+//					Range aRange = aValRangeParam.getValue();
+//					int aNum = aValNumParam.getValue();
+//					validateRange(aRange, aNum, "a-value");
+			//
+//					Range pRange = pValRangeParam.getValue();
+//					int pNum = pValNumParam.getValue();
+//					validateRange(pRange, pNum, "p-value");
+			//
+//					Range cRange = cValRangeParam.getValue();
+//					int cNum = cValNumParam.getValue();
+//					validateRange(cRange, cNum, "c-value");
+			//
+//					Double mc = mcParam.getValue();
+//					validateParameter(mc, "Mc");
+			//
+//					Double b = bParam.getValue();
+//					validateParameter(b, "b-value");
+			//
+//					Double alpha = alphaParam.getValue();
+			//
+//					if (timeDepMcParam.getValue()) {
+			//
+//						//to do: replace with rmax routine from desktop version of the code
+//						seqSpecModel = new ETAS_AftershockModel_SequenceSpecific(mainshock, aftershocks,
+//								ETAS_StatsCalc.linspace(amsRange.getLowerBound(), amsRange.getUpperBound(), amsNum), 
+//								genericParams.get_aSigma(),
+//								ETAS_StatsCalc.linspace(aRange.getLowerBound(), aRange.getUpperBound(), aNum),
+//								ETAS_StatsCalc.linspace(pRange.getLowerBound(), pRange.getUpperBound(), pNum),
+//								ETAS_StatsCalc.logspace(cRange.getLowerBound(), cRange.getUpperBound(), cNum),
+//								alpha, b, magRefParam.getValue(),	dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+//								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(),	// forecast start time, forecast end time 
+//								mcParam.getValue(), genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(),
+//								//									new ETAS_AftershockModel_Generic(genericParams), progress);	//max sim mag, max number of generations, number of simulations
+//								genericModel, progress);	//max sim mag, max number of generations, number of simulations
+			//
+			//
+//					} else {
+//						seqSpecModel = new ETAS_AftershockModel_SequenceSpecific(mainshock, aftershocks, 
+//								ETAS_StatsCalc.linspace(amsRange.getLowerBound(), amsRange.getUpperBound(), amsNum), 
+//								genericParams.get_aSigma(),
+//								ETAS_StatsCalc.linspace(aRange.getLowerBound(), aRange.getUpperBound(), aNum),
+//								ETAS_StatsCalc.linspace(pRange.getLowerBound(), pRange.getUpperBound(), pNum),
+//								ETAS_StatsCalc.logspace(cRange.getLowerBound(), cRange.getUpperBound(), cNum),
+//								alpha, b, magRefParam.getValue(), dataStartTimeParam.getValue(), dataEndTimeParam.getValue(), 
+//								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(),
+//								mcParam.getValue(), genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(),
+//								null, progress);
+			//
+//					}
+//					if(verbose) System.out.format("Mainshock productivity magnitude: %2.2f\n" , seqSpecModel.getProductivityMag());
+
+			}
+	}, true);
+
+	CalcStep computeBayesStep = new CalcStep("Estimating ETAS parameters",
+			"Computing Bayesian model. This may take some time...",
+			new Runnable() {
+		@Override
+		public void run() {
+			Range amsRange = amsValRangeParam.getValue();
+			int amsNum = amsValNumParam.getValue();
+			validateRange(amsRange, amsNum, "ams-value");
+
+			Range aRange = aValRangeParam.getValue();
+			int aNum = aValNumParam.getValue();
+			validateRange(aRange, aNum, "a-value");
+
+			Range pRange = pValRangeParam.getValue();
+			int pNum = pValNumParam.getValue();
+			validateRange(pRange, pNum, "p-value");
+
+			Range cRange = cValRangeParam.getValue();
+			int cNum = cValNumParam.getValue();
+			validateRange(cRange, cNum, "c-value");
+
+			System.out.println("cRange: " + cRange);
+			System.out.println("cmin: " + cRange.getLowerBound());
+
+			Double mc = mcParam.getValue();
+			validateParameter(mc, "Mc");
+
+			Double b = bParam.getValue();
+			validateParameter(b, "b-value");
+
+			Double alpha = alphaParam.getValue();
+			bayesianModel = null;
+			if (genericModel != null) {
+				bayesianModel = new ETAS_AftershockModel_SequenceSpecific(mainshock, aftershocks, 
+						ETAS_StatsCalc.linspace(amsRange.getLowerBound(), amsRange.getUpperBound(), amsNum), 
+						genericParams.get_aSigma(),
+						ETAS_StatsCalc.linspace(aRange.getLowerBound(), aRange.getUpperBound(), aNum),
+						ETAS_StatsCalc.linspace(pRange.getLowerBound(), pRange.getUpperBound(), pNum),
+						ETAS_StatsCalc.logspace(cRange.getLowerBound(), cRange.getUpperBound(), cNum),
+						alpha, b, magRefParam.getValue(),	dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+						forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(),
+						mcParam.getValue(), genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(),
+						genericModel, progress, validate);
+			}
+
+			amsValParam.setValue(round(bayesianModel.getMaxLikelihood_ams(),2));
+			amsValParam.getEditor().refreshParamEditor();
+			aValParam.setValue(round(bayesianModel.getMaxLikelihood_a(),2));
+			aValParam.getEditor().refreshParamEditor();
+			pValParam.setValue(round(bayesianModel.getMaxLikelihood_p(),2));
+			pValParam.getEditor().refreshParamEditor();
+			//				cValParam.setValue(round(bayesianModel.getMaxLikelihood_c(),6));
+			cValParam.setValue(round(Math.log10(bayesianModel.getMaxLikelihood_c()),2));
+			cValParam.getEditor().refreshParamEditor();
+
+			// display the mainshock productivity as the shift in apparent magnitude relative to the generic productivity.
+			System.out.format("\nMainshock productivity magnitude: %2.2f\n" , getProductivityMag());
+		}
+	}, true);
+
+	CalcStep postParamPlotStep = new CalcStep("Plotting", "Building ETAS summary plots...",
+			 new Runnable() {
+		@Override
+		public void run() {
+			plotPDFs();
+			setEnableParamsPostAftershockParams(true);
+			plotCumulativeNum();
+		}
+	}, true);
+	
+	CalcStep genericForecastStep = new CalcStep("Computing aftershock forecast", "Generating Generic forecast. This can take some time...",
+			 new Runnable() {
+		@Override
+		public void run() {
+			if(verbose) System.out.println("Setting Mc");
+			genericModel.setMagComplete(mcParam.getValue());
+			if (plotSpecificOnlyParam.getValue()) {
+				genericModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+						forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), 0);
+			} else {
+				if(verbose) System.out.println("Computing Generic forecast");
+			
+				genericModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+					forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
+			}
+		}
+	}, true);
+
+	CalcStep seqSpecForecastStep = new CalcStep("Computing aftershock forecast", "Generating Sequence-Specific forecast. This can take some time...",
+			 new Runnable() {
+		@Override
+		public void run() {
+			// disabled -- no seq spec model is computed
+//			if (seqSpecModel != null){
+//				seqSpecModel.setMagComplete(mcParam.getValue());
+//				if(verbose)System.out.println("Computing sequence-only forecast");
+//				seqSpecModel.computeNewForecast(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+//						forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), 10000);
+//			}
+		}
+	}, true);
+	
+	CalcStep bayesianForecastStep = new CalcStep("Computing aftershock forecast", "Generating Bayesian forecast. This can take some time...",
+			 new Runnable() {
+		@Override
+		public void run() {
+			if (bayesianModel != null){
+				bayesianModel.setMagComplete(mcParam.getValue());
+				if(verbose)System.out.println("Computing Bayesian forecast");
+				bayesianModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
+						forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
+			}
+		}
+	}, true);
+	
+	CalcStep plotMFDStep = new CalcStep("Generating Forecast Summary", "Building summary plots...",  new Runnable() {
+		@Override
+		public void run() {
+			if (tabbedPane.getTabCount() > mag_time_tab_index)
+				plotMFDs(aftershockMND, mcParam.getValue());
+		}
+	}, true);
+
+	CalcStep postForecastPlotStep = new CalcStep("Generating Forecast Summary", "Building forecast plots...", new Runnable() {
+		@Override
+		public void run() {
+			plotExpectedAfershockMFDs();
+			//update cumNumPlot
+			plotCumulativeNum();
+			setEnableParamsPostForecast(true);
+		}
+	}, true);
+	
+	CalcStep plotTableStep = new CalcStep("Generating Forecast Summary", "Building aftershock forecast table...",  new Runnable() {
+		@Override
+		public void run() {
+			plotForecastTable(progress);	
+		}
+	}, true);	
+				
+	CalcStep fetchSourceStep = new CalcStep("Fetching Finite Source", "Contacting USGS ComCat Webservice. If this doesn't work, trying again may help...", new Runnable() {
+		@Override
+		public void run() {
+			// // // this gets a finite source from Shakemap. Needs updating before it will work again.
+			//				if(verbose) System.out.println("Fetching ShakeMap finite source from ComCat...");
+			//				if (!fitMainshockSourceParam.getValue() && faultTrace == null){
+//			final FitSourceType fitType = fitSourceTypeParam.getValue();
+
+//			if (fitType == FitSourceType.SHAKEMAP){
+//				// get the source for the biggest earthquake? Or the one specified by the eventID? Hmmm... 
+//				// ...needs to be the biggest event, because source will be scaled to size of biggest event!
+//				faultTrace = accessor.fetchShakemapSource(largestShock.getEventId());
+//				//						faultTrace = accessor.fetchShakemapSource(eventIDParam.getValue());
+//				if(faultTrace == null){
+//					System.out.println("...ShakeMap finite source not available. Fitting early aftershocks...");
+//					// no shakemap, fit early aftershocks
+//					fitSourceTypeParam.setValue(FitSourceType.AFTERSHOCKS);
+//					fitSourceTypeParam.getEditor().refreshParamEditor();
+//					faultTrace = new FaultTrace("Mainshock Location");
+//					faultTrace.add(mainshock.getHypocenterLocation());
+//				}
+	//
+//				if (mainshock.getHypocenterLocation().getLongitude() > 180){
+//					ListIterator<Location> i = faultTrace.listIterator();
+//					while (i.hasNext()){
+//						Location loc = i.next();
+//						if (loc.getLongitude() < 0){
+//							i.set(new Location(loc.getLatitude(), loc.getLongitude()+360));
+//						}
+//					}
+//				}
+//				if(D) System.out.println(faultTrace);
+//			}
+		}
+	}, true);
+	
+	CalcStep plotMapStep = new CalcStep("Generating Spatial Forecast", "Generating spatial forecast maps. This can take some time...",
+			new Runnable() {
+		@Override
+		public void run() {
+			Stopwatch watch = Stopwatch.createStarted();
+
+			plotRateModel2D(progress);
+			setEnableParamsPostRender(true);
+
+			watch.stop();
+			if(verbose)System.out.println(
+					"Took "+watch.elapsed(TimeUnit.SECONDS)+"s to compute/plot rate map");
+			//								tabbedPane.setSelectedIndex(aftershock_expected_index);
+			tabbedPane.setSelectedIndex(forecast_map_tab_index);
+		}
+	}, true);
+	
+	
+	CalcStep tabRefreshStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
+		@Override
+		public void run() {
+			refreshTabs(forecast_map_tab_index);	
+		}
+	}, true);
+	
+	CalcStep tabSelectStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
+		@Override
+		public void run() {
+			tabbedPane.setSelectedIndex(forecast_table_tab_index);
+		}
+	}, true);
+	
+	CalcStep autoSaveStep = new CalcStep("Saving catalog","Saving catalog to local file...", new Runnable() {
+		@Override
+		public void run() {
+			String filename = new String(workingDir + "/Aftershock_Catalog.txt");
+			File savefile = new File(filename);
+			try {
+				saveCatalog(savefile);
+			} catch (IOException e) {
+				ExceptionUtils.throwAsRuntimeException(e);
+			}
+		}
+	}, true);
+	
+	CalcStep enforceRJstep = new CalcStep("Configuring", "Configuring for Reasenberg And Jones mode...", new Runnable() {
+		@Override
+		public void run() {
+			if (rjMode) {
+				System.out.println("Configuring for Reasenberg and Jones mode...");
+				aValRangeParam.setValue(new Range(-9,-9));	
+				aValRangeParam.getEditor().refreshParamEditor();
+				aValNumParam.setValue(1);
+				aValNumParam.getEditor().refreshParamEditor();
+			}
+		}
+	}, true);
+	
+	CalcStep prForecastStep = new CalcStep("Configuring", "Configuring for Puerto Rico...", new Runnable() {
+		@Override
+		public void run() {
+			System.out.println("Configuring for Puerto Rico forecast update...");
+			setMagComplete(3.5);
+
+			//				amsValRangeParam.setValue(new Range(-2.3, -1.2));
+			amsValRangeParam.setValue(new Range(-3.0, -0.8));
+			amsValRangeParam.getEditor().refreshParamEditor();
+			amsValNumParam.setValue(51);
+			amsValNumParam.getEditor().refreshParamEditor();
+
+			//				aValRangeParam.setValue(new Range(-2.3, -1.8));
+			aValRangeParam.setValue(new Range(-3.0, -1.8));
+			aValRangeParam.getEditor().refreshParamEditor();
+			aValNumParam.setValue(31);
+			aValNumParam.getEditor().refreshParamEditor();
+
+			//				pValRangeParam.setValue(new Range(0.8, 1.2));
+			pValRangeParam.setValue(new Range(0.7, 1.2));
+			pValRangeParam.getEditor().refreshParamEditor();
+			pValNumParam.setValue(31);
+			pValNumParam.getEditor().refreshParamEditor();
+
+			//				cValRangeParam.setValue(new Range(1e-4, 1e-1));
+			cValRangeParam.setValue(new Range(1e-4, 1e-1));
+			cValRangeParam.getEditor().refreshParamEditor();
+			cValNumParam.setValue(31);
+			cValNumParam.getEditor().refreshParamEditor();
+
+			numberSimsParam.setValue(30000);
+			//				numberSimsParam.setValue(10000);
+			numberSimsParam.getEditor().refreshParamEditor();
+
+			intensityTypeParam.setValue(IntensityType.NONE);
+			intensityTypeParam.getEditor().refreshParamEditor();
+		}
+	}, true);
+	
+	CalcStep quickMapStep = new CalcStep("Mapping", "Plotting map of aftershock rate...", new Runnable() {
+		@Override
+		public void run() {
+			System.out.println("Prepating aftershock rate map..");
+
+			intensityTypeParam.setValue(IntensityType.NONE);
+			intensityTypeParam.getEditor().refreshParamEditor();
+		}
+	}, true);
+	
+	CalcStep writeForecastToFileStep = new CalcStep("Saving forecast", "Writing forecast to file...", new Runnable() {
+		@Override
+		public void run() {
+			File outFile = new File(workingDir + "/Forecasts/" + eventID + "/" + eventID + "_t" 
+					+ String.format("%2.1f", dataEndTimeParam.getValue()) +  ".json");
+				publishJsonOnly(outFile);
+		}
+	}, true);
+
+//	CalcStep updateForecastDurationStep = new CalcStep("Updating",  "Updating forecast duration", new Runnable() { 
+//		@Override
+//		public void run() {
+//			try{
+//				if (forecastStartTimeParam.getValue() != null){
+//					forecastEndTimeParam.setValue(round(forecastStartTimeParam.getValue() + forecastDurationParam.getValue().getValueNumeric()));
+//					forecastEndTimeParam.getEditor().refreshParamEditor();
+//				}
+//			}finally{
+//			}
+//		}
+//	}, true);
+
+	
+	CalcStep refreshCmlNumTabStep = new CalcStep("Plotting",  "Updating plots...", new Runnable() {
+		@Override
+		public void run() {
+			refreshTabs(cml_num_tab_index);
+		}
+	}, true);
+
+	CalcStep selectEpicenterTabStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
+		@Override
+		public void run() {
+			tabbedPane.setSelectedIndex(epicenter_tab_index);
+		}
+	}, true);	
+	
+	CalcStep updateTectonicRegimeStep = new CalcStep("Updating Model", "Updating generic parameters...", new Runnable() {
+		@Override
+		public void run() {
+//			 tectonicRegimeParam.getValue() + "..."
+			setEnableParamsPostAftershockParams(false);
+			setEnableParamsPostComputeB(false);
+
+			genericParams = genericFetch.get(tectonicRegimeParam.getValue());
+			Preconditions.checkNotNull(genericParams, "Generic params not found or server error");
+			if(verbose) System.out.println("Updating Generic model params to " + tectonicRegimeParam.getValue() + ": "+genericParams);
+
+			setMagComplete();
+			
+			//update Parameter Ranges (code at 1938 in set mainshock)
+			updateParameterGenericRanges();
+			
+		}
+	}, true);
+	
+	CalcStep pubStep = new CalcStep("Building Document", "Building aftershock forecast summary...", new Runnable() {
+		@Override
+		public void run() {
+			publishGraphicalForecast();
+		}
+	}, true);
+
 	@Override
 	public void parameterChange(ParameterChangeEvent event) {
 		Parameter<?> param = event.getParameter();
 		
-		final CalcProgressBar progress = new CalcProgressBar(this, "Progress", "Intializing...", false);
-		
-		// define common steps
-		CalcStep fetchCatalogStep = new CalcStep("Fetching Events",
-				"Contacting USGS ComCat Webservice. This is occasionally slow. "
-						+ "If it fails, trying again often works.", new Runnable() {
-
-			@Override
-			public void run() {
-				// set the data window to 0 - now, forecast time to now - one month
-//				dataStartTimeParam.setValue(0);
-				if (dataEndTimeParam.getValue() == null) {
-					dataEndTimeParam.setValue(dataEndTimeParam.getMax());
-				}
-				fetchEvents();
-				if (mainshock == null) stopRequested=true;
-			}
-			
-		}, true);
-		
-		CalcStep loadCatalogStep = new CalcStep("Fetching Events From File", "loading catalog from file", new Runnable() {
-			
-			@Override
-			public void run() {
-				try {
-					System.out.println("Loading Catalog from file: " + catalogFileName);
-
-					final File[] file = new File[1];
-
-					if (catalogFileGiven){
-						String filename = new String(workingDir + "/" + catalogFileName);
-						file[0] = new File(filename);
-					} else {
-						throw new IllegalStateException("catalog file not given.");
-					}
-					loadCatalog(file[0]);
-					if (!commandLine)
-						setEnableParamsPostFetch(false);
-
-				} catch (IOException e) {
-					ExceptionUtils.throwAsRuntimeException(e);
-				}
-			}
-		}, true);
-			
-
-		CalcStep setMainshockStep = new CalcStep("Initializing Model", "Collecting mainshock information...", new Runnable() {
-
-			@Override
-			public void run() {
-				setMainshock(mainshock);
-			}
-			
-		}, true);
-
-		CalcStep postFetchCalcStep = new CalcStep("Initializing Model", "Computing sequence statistics...", new Runnable() {
-
-			@Override
-			public void run() {
-				doPostFetchCalculations();
-			}
-			
-			
-			
-		}, true);
-		
-//		computeBButton
-		CalcStep computeBStep = new CalcStep("Initializing Model", "Computing b-value and magnitude of completeness...", new Runnable() {
-			
-			@Override
-			public void run() {
-
-				if (aftershocks.size() > 0){
-					ogataMND = new OgataMagFreqDist(aftershocks, genericModel.get_b(), genericModel.get_bSigma());
-
-					if(verbose) System.out.println(ogataMND + " " + ogataMND.goodnessOfFit());
-				
-					Double b, mc;
-					b = ogataMND.get_bValue();
-					mc = ogataMND.get_Mc();
-					validateParameter(mc, "Mc");
-				
-					bParam.setValue(round(b,2));
-					bParam.getEditor().refreshParamEditor();
-
-					mcParam.setValue(round(mc,2));
-					mcParam.getEditor().refreshParamEditor();
-
-					autoMcParam.setValue(false);
-					computeBButton.setButtonText("Reset Mc");
-					computeBButton.setInfo("Estimate Mc from b-value stability");
-					computeBButton.getEditor().refreshParamEditor();
-					
-//					if(seqSpecModel != null)
-//						seqSpecModel.set_b(b);
-					if(bayesianModel != null)
-						bayesianModel.set_b(b);
-					
-					link_alpha(); //reset the alpha parameter, too
-					
-//					tabbedPane.setSelectedIndex(mag_num_tab_index);
-				} else {
-					System.err.println("Not enough data to compute b-value");
-				}
-				
-				setEnableParamsPostComputeB(true);
-				
-			}
-			
-		}, true);
-
-		CalcStep postFetchPlotStep = new CalcStep("Plotting", "Building sequence summary plots...", new Runnable() {
-
-			@Override
-			public void run() {
-				if(!commandLine)
-					doPostFetchPlots();
-				//inlcudes MFD plot
-			}
-		}, true);
-		
-		CalcStep updateModelStep = new CalcStep("Updating Model", "Updating generic model parameters...", new Runnable() {
-
-			@Override
-			public void run() {
-				// if a generic model has already been computed, update it to reflect new Mc/Mref productivity adjustment
-				if(genericModel != null){
-					if(verbose) System.out.println("Adjusting generic productivity to reflect Mc change...");
-
-					// not sure if I need this
-					genericModel = new ETAS_AftershockModel_Generic(mainshock, aftershocks, genericParams, 
-							dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-							forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), mcParam.getValue(),
-							genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(), validate);
-
-					resetFitConstraints(genericParams);
-					setEnableParamsPostAftershockParams(false);
-				}
-			}
-
-
-		}, true);
-		
-//		computeAftershockParamsButton
-//		CalcStep computeAftershockParamStep = new CalcStep("Estimating ETAS parameters", "Computing sequence-specific model. This may take some time...", new Runnable() {
-//
-//			@Override
-//			public void run() {
-//				Range amsRange = amsValRangeParam.getValue();
-//				int amsNum = amsValNumParam.getValue();
-//				validateRange(amsRange, amsNum, "ams-value");
-//				
-//				Range aRange = aValRangeParam.getValue();
-//				int aNum = aValNumParam.getValue();
-//				validateRange(aRange, aNum, "a-value");
-//				
-//				Range pRange = pValRangeParam.getValue();
-//				int pNum = pValNumParam.getValue();
-//				validateRange(pRange, pNum, "p-value");
-//				
-//				Range cRange = cValRangeParam.getValue();
-//				int cNum = cValNumParam.getValue();
-//				validateRange(cRange, cNum, "c-value");
-//				
-//				Double mc = mcParam.getValue();
-//				validateParameter(mc, "Mc");
-//								
-//				Double b = bParam.getValue();
-//				validateParameter(b, "b-value");
-//				
-//				Double alpha = alphaParam.getValue();
-//								
-//				if (timeDepMcParam.getValue()) {
-//					
-//					//to do: replace with rmax routine from desktop version of the code
-//					seqSpecModel = new ETAS_AftershockModel_SequenceSpecific(mainshock, aftershocks,
-//							ETAS_StatsCalc.linspace(amsRange.getLowerBound(), amsRange.getUpperBound(), amsNum), 
-//							genericParams.get_aSigma(),
-//							ETAS_StatsCalc.linspace(aRange.getLowerBound(), aRange.getUpperBound(), aNum),
-//							ETAS_StatsCalc.linspace(pRange.getLowerBound(), pRange.getUpperBound(), pNum),
-//							ETAS_StatsCalc.logspace(cRange.getLowerBound(), cRange.getUpperBound(), cNum),
-//							alpha, b, magRefParam.getValue(),	dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-//							forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(),	// forecast start time, forecast end time 
-//							mcParam.getValue(), genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(),
-////							new ETAS_AftershockModel_Generic(genericParams), progress);	//max sim mag, max number of generations, number of simulations
-//							genericModel, progress);	//max sim mag, max number of generations, number of simulations
-//					
-//					
-//				} else {
-//					seqSpecModel = new ETAS_AftershockModel_SequenceSpecific(mainshock, aftershocks, 
-//							ETAS_StatsCalc.linspace(amsRange.getLowerBound(), amsRange.getUpperBound(), amsNum), 
-//							genericParams.get_aSigma(),
-//							ETAS_StatsCalc.linspace(aRange.getLowerBound(), aRange.getUpperBound(), aNum),
-//							ETAS_StatsCalc.linspace(pRange.getLowerBound(), pRange.getUpperBound(), pNum),
-//							ETAS_StatsCalc.logspace(cRange.getLowerBound(), cRange.getUpperBound(), cNum),
-//							alpha, b, magRefParam.getValue(), dataStartTimeParam.getValue(), dataEndTimeParam.getValue(), 
-//							forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(),
-//							mcParam.getValue(), genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(),
-//							null, progress);
-//							
-//				}
-//				if(verbose) System.out.format("Mainshock productivity magnitude: %2.2f\n" , seqSpecModel.getProductivityMag());
-//			}
-//			
-//		}, true);
-		
-		CalcStep computeBayesStep = new CalcStep("Estimating ETAS parameters", "Computing Bayesian model. This may take some time...", new Runnable() {
-
-			@Override
-			public void run() {
-
-//				bayesianModel = null;
-//				if (genericModel != null) {
-//					bayesianModel = new ETAS_AftershockModel_SequenceSpecific(mainshock, aftershocks, rmaxParam.getValue(),
-//							seqSpecModel.ams_vec, genericParams.get_aSigma(), seqSpecModel.a_vec, seqSpecModel.p_vec,	seqSpecModel.c_vec,
-//							seqSpecModel.alpha, seqSpecModel.b, magRefParam.getValue(), dataStartTimeParam.getValue(), dataEndTimeParam.getValue(), 
-//							forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(),
-//							mcParam.getValue(), genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(),
-//							genericModel, progress);
-//				}
-				Range amsRange = amsValRangeParam.getValue();
-				int amsNum = amsValNumParam.getValue();
-				validateRange(amsRange, amsNum, "ams-value");
-				
-				Range aRange = aValRangeParam.getValue();
-				int aNum = aValNumParam.getValue();
-				validateRange(aRange, aNum, "a-value");
-				
-				Range pRange = pValRangeParam.getValue();
-				int pNum = pValNumParam.getValue();
-				validateRange(pRange, pNum, "p-value");
-				
-				Range cRange = cValRangeParam.getValue();
-				int cNum = cValNumParam.getValue();
-				validateRange(cRange, cNum, "c-value");
-				
-				System.out.println("cRange: " + cRange);
-				System.out.println("cmin: " + cRange.getLowerBound());
-				
-				Double mc = mcParam.getValue();
-				validateParameter(mc, "Mc");
-								
-				Double b = bParam.getValue();
-				validateParameter(b, "b-value");
-				
-				Double alpha = alphaParam.getValue();
-				bayesianModel = null;
-				if (genericModel != null) {
-					bayesianModel = new ETAS_AftershockModel_SequenceSpecific(mainshock, aftershocks, 
-							ETAS_StatsCalc.linspace(amsRange.getLowerBound(), amsRange.getUpperBound(), amsNum), 
-							genericParams.get_aSigma(),
-							ETAS_StatsCalc.linspace(aRange.getLowerBound(), aRange.getUpperBound(), aNum),
-							ETAS_StatsCalc.linspace(pRange.getLowerBound(), pRange.getUpperBound(), pNum),
-							ETAS_StatsCalc.logspace(cRange.getLowerBound(), cRange.getUpperBound(), cNum),
-							alpha, b, magRefParam.getValue(),	dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-							forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(),
-							mcParam.getValue(), genericParams.get_maxMag(), 100, 0, fitMSProductivityParam.getValue(), timeDepMcParam.getValue(),
-							genericModel, progress, validate);
-				}
-
-
-				amsValParam.setValue(round(bayesianModel.getMaxLikelihood_ams(),2));
-				amsValParam.getEditor().refreshParamEditor();
-				aValParam.setValue(round(bayesianModel.getMaxLikelihood_a(),2));
-				aValParam.getEditor().refreshParamEditor();
-				pValParam.setValue(round(bayesianModel.getMaxLikelihood_p(),2));
-				pValParam.getEditor().refreshParamEditor();
-//				cValParam.setValue(round(bayesianModel.getMaxLikelihood_c(),6));
-				cValParam.setValue(round(Math.log10(bayesianModel.getMaxLikelihood_c()),2));
-				cValParam.getEditor().refreshParamEditor();
-			}
-		}, true);
-		
-		CalcStep postParamPlotStep = new CalcStep("Plotting", "Building ETAS summary plots...", new Runnable() {
-			
-			@Override
-			public void run() {
-	
-				plotPDFs();
-				setEnableParamsPostAftershockParams(true);
-				plotCumulativeNum();
-
-			}
-		}, true);
-		
-//		computeAftershockForecastButton
-		CalcStep genericForecastStep = new CalcStep("Computing aftershock forecast", "Generating Generic forecast. This can take some time...",
-				new Runnable() {
-
-					@Override
-					public void run() {
-						if(verbose) System.out.println("Setting Mc");
-						genericModel.setMagComplete(mcParam.getValue());
-						if(verbose) System.out.println("Computing Generic forecast");
-						genericModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-								forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
-					}
-		}, true);
-		
-//		CalcStep seqSpecForecastStep = new CalcStep("Computing aftershock forecast", "Generating Sequence-Specific forecast. This can take some time...",
-//				new Runnable() {
-//
-//					@Override
-//					public void run() {
-//
-//						if (seqSpecModel != null){
-//							seqSpecModel.setMagComplete(mcParam.getValue());
-//							if(verbose)System.out.println("Computing sequence-only forecast");
-//							seqSpecModel.computeNewForecast(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-//									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), 10000);
-//						}
-//					}
-//		}, true);
-		
-		CalcStep bayesianForecastStep = new CalcStep("Computing aftershock forecast", "Generating Bayesian forecast. This can take some time...",
-				new Runnable() {
-
-					@Override
-					public void run() {
-						
-						if (bayesianModel != null){
-							bayesianModel.setMagComplete(mcParam.getValue());
-							if(verbose)System.out.println("Computing Bayesian forecast");
-							bayesianModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-									forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
-						}
-					}		
-		}, true);
-		
-		CalcStep plotMFDStep = new CalcStep("Generating Forecast Summary", "Building summary plots...", new Runnable() {
-
-			@Override
-			public void run() {
-				if (tabbedPane.getTabCount() > mag_time_tab_index)
-					plotMFDs(aftershockMND, mcParam.getValue());
-			}
-		}, true);
-		
-		CalcStep postForecastPlotStep = new CalcStep("Generating Forecast Summary", "Building forecast plots...",
-				new Runnable() {
-					@Override
-					public void run() {
-						plotExpectedAfershockMFDs();
-						//update cumNumPlot
-						plotCumulativeNum();
-						setEnableParamsPostForecast(true);
-					}
-			
-		}, true);
-		
-		CalcStep plotTableStep = new CalcStep("Generating Forecast Summary", "Building aftershock forecast table...",
-				new Runnable() {
-
-					@Override
-					public void run() {
-						plotForecastTable(progress);
-//						tabbedPane.setSelectedIndex(aftershock_expected_index);
-					}
-		}, true);	
-		
-//		generateMapButton
-		CalcStep fetchSourceStep = new CalcStep("Fetching Finite Source", "Contacting USGS ComCat Webservice. If this doesn't work, trying again may help...",
-				new Runnable() {
-					@Override
-					
-					public void run(){
-						
-//						if(verbose) System.out.println("Fetching ShakeMap finite source from ComCat...");
-//						if (!fitMainshockSourceParam.getValue() && faultTrace == null){
-						final FitSourceType fitType = fitSourceTypeParam.getValue();
-						
-						if (fitType == FitSourceType.SHAKEMAP){
-								// get the source for the biggest earthquake? Or the one specified by the eventID? Hmmm... 
-								// ...needs to be the biggest event, because source will be scaled to size of biggest event!
-								faultTrace = accessor.fetchShakemapSource(largestShock.getEventId());
-//								faultTrace = accessor.fetchShakemapSource(eventIDParam.getValue());
-								if(faultTrace == null){
-									System.out.println("...ShakeMap finite source not available. Fitting early aftershocks...");
-									// no shakemap, fit early aftershocks
-									fitSourceTypeParam.setValue(FitSourceType.AFTERSHOCKS);
-									fitSourceTypeParam.getEditor().refreshParamEditor();
-									faultTrace = new FaultTrace("Mainshock Location");
-									faultTrace.add(mainshock.getHypocenterLocation());
-								}
-								
-								if (mainshock.getHypocenterLocation().getLongitude() > 180){
-									ListIterator<Location> i = faultTrace.listIterator();
-									while (i.hasNext()){
-										Location loc = i.next();
-										if (loc.getLongitude() < 0){
-											i.set(new Location(loc.getLatitude(), loc.getLongitude()+360));
-										}
-									}
-								}
-								if(D) System.out.println(faultTrace);
-						}
-						
-//						if(verbose) System.out.println("Fetching ShakeMap URL from ComCat servers...");
-//						shakeMapURL = accessor.fetchShakemapURL(eventIDParam.getValue());
-//						if(verbose) System.out.println(shakeMapURL);
-							
-						
-					}
-		}, true);
-		
-		CalcStep plotMapStep = new CalcStep("Generating Spatial Forecast", "Generating spatial forecast maps. This can take some time...",
-				new Runnable() {
-
-					@Override
-					public void run() {
-						Stopwatch watch = Stopwatch.createStarted();
-
-						plotRateModel2D(progress);
-						setEnableParamsPostRender(true);
-						
-						watch.stop();
-						if(verbose)System.out.println(
-								"Took "+watch.elapsed(TimeUnit.SECONDS)+"s to compute/plot rate map");
-						//								tabbedPane.setSelectedIndex(aftershock_expected_index);
-						tabbedPane.setSelectedIndex(forecast_map_tab_index);
-						
-						
-					}
-					
-		}, true);
-		
-		CalcStep tabRefreshStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
-			
-			@Override
-			public void run() {
-				refreshTabs(forecast_map_tab_index);
-			}
-			
-		}, true);
-		
-		CalcStep tabSelectStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
-			
-			@Override
-			public void run() {
-				tabbedPane.setSelectedIndex(forecast_table_tab_index);
-			}
-			
-		}, true);
-		
-		CalcStep autoSaveStep = new CalcStep("Saving catalog","Saving catalog to local file...",
-				new Runnable() {
-					@Override
-					public void run() {
-						String filename = new String(workingDir + "/Aftershock_Catalog.txt");
-						File savefile = new File(filename);
-						try {
-							saveCatalog(savefile);
-						} catch (IOException e) {
-							ExceptionUtils.throwAsRuntimeException(e);
-						}
-					}
-				}, true);
-		
-		
-		CalcStep enforceRJstep = new CalcStep("Configuring", "Configuring for Reasenberg And Jones mode...", new Runnable() {
-
-			@Override
-			public void run() {
-
-				if (rjMode) {
-					System.out.println("Configuring for Reasenberg and Jones mode...");
-					aValRangeParam.setValue(new Range(-9,-9));	
-					aValRangeParam.getEditor().refreshParamEditor();
-					aValNumParam.setValue(1);
-					aValNumParam.getEditor().refreshParamEditor();
-				}
-			}
-			
-			
-		}, true);
-		
-		CalcStep prForecastStep = new CalcStep("Configuring", "Configuring for Puerto Rico...", new Runnable() {
-
-			@Override
-			public void run() {
-
-				//					eventIDParam .setValue("us70006vll");
-
-				System.out.println("Configuring for Puerto Rico forecast update...");
-				setMagComplete(3.5);
-				
-//				amsValRangeParam.setValue(new Range(-2.3, -1.2));
-				amsValRangeParam.setValue(new Range(-3.0, -0.8));
-				amsValRangeParam.getEditor().refreshParamEditor();
-				amsValNumParam.setValue(51);
-				amsValNumParam.getEditor().refreshParamEditor();
-				
-//				aValRangeParam.setValue(new Range(-2.3, -1.8));
-				aValRangeParam.setValue(new Range(-3.0, -1.8));
-				aValRangeParam.getEditor().refreshParamEditor();
-				aValNumParam.setValue(31);
-				aValNumParam.getEditor().refreshParamEditor();
-				
-//				pValRangeParam.setValue(new Range(0.8, 1.2));
-				pValRangeParam.setValue(new Range(0.7, 1.2));
-				pValRangeParam.getEditor().refreshParamEditor();
-				pValNumParam.setValue(31);
-				pValNumParam.getEditor().refreshParamEditor();
-				
-//				cValRangeParam.setValue(new Range(1e-4, 1e-1));
-				cValRangeParam.setValue(new Range(1e-4, 1e-1));
-				cValRangeParam.getEditor().refreshParamEditor();
-				cValNumParam.setValue(31);
-				cValNumParam.getEditor().refreshParamEditor();
-				
-				numberSimsParam.setValue(30000);
-//				numberSimsParam.setValue(10000);
-				numberSimsParam.getEditor().refreshParamEditor();
-				
-				intensityTypeParam.setValue(IntensityType.NONE);
-				intensityTypeParam.getEditor().refreshParamEditor();
-				
-			}
-		}, true);
-		
-		CalcStep quickMapStep = new CalcStep("Mapping", "Plotting map of aftershock rate...", new Runnable() {
-
-			@Override
-			public void run() {
-				System.out.println("Prepating aftershock rate map..");
-		
-				intensityTypeParam.setValue(IntensityType.NONE);
-				intensityTypeParam.getEditor().refreshParamEditor();
-				
-				
-			}
-		}, true);
-
-
 		CalcStep tipStep; //define later
 
 		if (!changeListenerEnabled || param.getValue() == null) {
@@ -3785,11 +4380,15 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		} else if (param.getValue() == null) {
 			if(D)	System.out.println("Suppressing refresh for " + param.getName() + " (value is null)");
 		} else {
-			if(verbose) System.out.println("Updating " + param.getName());
+			if(verbose) System.out.println("Change detected for " + param.getName());
+		
 			// putting this in as a safegaurd
 			setChangeListenerEnabled(false);
+			
 			try {
 			if (param == quickForecastButton) {
+				
+				// quick Forecast
 				System.out.println("Computing quick forecast with defafult settings...");
 
 				CalcStep quickTabRefreshStep1 = new CalcStep("Plotting","Updating plots...", new Runnable() {
@@ -3798,6 +4397,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						refreshTabs(cml_num_tab_index);
 					}
 				}, true);
+				
+				
 				CalcStep quickTabRefreshStep2 = new CalcStep("Plotting","Updating plots...", new Runnable() {
 					@Override
 					public void run() {
@@ -3817,9 +4418,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					}
 				}, true);
 
-
 				CalcStep quickTabSelectStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
-
 					@Override
 					public void run() {
 						tabbedPane.setSelectedIndex(forecast_map_tab_index);
@@ -3836,17 +4435,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				}, true);
 				
-				CalcStep writeForecastToFileStep = new CalcStep("Saving forecast", "Writing forecast to file...", new Runnable() {
-					
-					@Override
-					public void run() {
-						File outFile = new File(workingDir + "/Forecasts/" + eventID + "/" + eventID + "_t" 
-							+ String.format("%2.1f", dataEndTimeParam.getValue()) +  ".json");
-						publishJsonOnly(outFile);
-					}
-					
-				}, true);
-
+				
 				CalcStep endStep = new CalcStep("Ending", "Shutting Down...", new Runnable() {
 					@Override
 					public void run() {
@@ -3855,7 +4444,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 					
 				}, true);
 
-				
 				CalcRunnable run;
 				if(!commandLine)
 //					if (prForecastMode) 
@@ -3880,25 +4468,25 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //								plotMapStep,
 //								tipStep);
 //					else
-						run = new CalcRunnable(progress,
-								fetchCatalogStep,
-								setMainshockStep,
-								postFetchCalcStep,
-								postFetchPlotStep,
-								enforceRJstep,
-								plotMFDStep,
-								quickTabRefreshStep1,
-								computeBayesStep,
-								postParamPlotStep,
-								quickTabRefreshStep2,
-								genericForecastStep,
-								bayesianForecastStep,
-								postForecastPlotStep,
-								plotTableStep,
-								quickTabRefreshStep3,
-								quickMapStep,
-								plotMapStep,
-								tipStep);
+					run = new CalcRunnable(progress,
+							fetchCatalogStep,
+							setMainshockStep,
+							postFetchCalcStep,
+							postFetchPlotStep,
+							enforceRJstep,
+							plotMFDStep,
+							quickTabRefreshStep1,
+							computeBayesStep,
+							postParamPlotStep,
+							quickTabRefreshStep2,
+							genericForecastStep,
+							bayesianForecastStep,
+							postForecastPlotStep,
+							plotTableStep,
+							quickTabRefreshStep3,
+							quickMapStep,
+							plotMapStep,
+							tipStep);
 					
 				else {
 //					if (prForecastMode) 
@@ -3952,121 +4540,52 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						//doesn't exist
 					}
 				}
+
 				
-				// reset the workspace
-				resetWorkspace();
+				// reset the workspace because core data parameters have been changed
+//				if (verbose) System.out.println("workspace reset. Results need updating");
+//				resetWorkspace();
 
 				if(param == eventIDParam) printTip(1);
-
+				
 			} else if (param == nowBoolean){
-//				if(verbose) System.out.println("Updating start now flag");
-				
-				System.out.println(nowBoolean.getValue());
-				
-				if(nowBoolean.getValue()) {
-					if (mainshock != null) {
-						forecastStartTimeParam.setValue( (double) (System.currentTimeMillis() - mainshock.getOriginTime())/ETAS_StatsCalc.MILLISEC_PER_DAY);
-						if (forecastStartTimeParam.getValue() < dataStartTimeParam.getValue()) {
-							dataStartTimeParam.setValue(forecastStartTimeParam.getValue());
-							dataStartTimeParam.getEditor().refreshParamEditor();
-						}
-						forecastStartTimeParam.getEditor().refreshParamEditor();
-						
-					}
-					DateFormat df = new SimpleDateFormat();
-					dateStartString.setValue(df.format(System.currentTimeMillis()));
-					dateStartString.getEditor().refreshParamEditor();
-	
-				} else {
-					if (mainshock == null) {
-						dateStartString.setValue("");
-						dateStartString.getEditor().refreshParamEditor();
-					}
-				}
-				
-				refreshTimeWindowEditor();
+				CalcRunnable run = new CalcRunnable(progress, updateNowBooleanStep);
+				new Thread(run).start();
 
-			} else if (param == forecastDurationParam) {
-//				if(verbose) System.out.println("Updating forecast duration");
-				try{
-					if (forecastStartTimeParam.getValue() != null){
-						forecastEndTimeParam.setValue(round(forecastStartTimeParam.getValue() + forecastDurationParam.getValue().getValueNumeric()));
-						forecastEndTimeParam.getEditor().refreshParamEditor();
-					}
-				}finally{
-
-				}
+//			} else if (param == forecastDurationParam) {
+//				CalcRunnable run = new CalcRunnable(progress, updateForecastDurationStep);
+//				new Thread(run).start();
+//				
 			
 			} else if (param == forecastStartTimeParam) {
-//				if(verbose) System.out.println("Updating forecast start time");
-				if (forecastStartTimeParam.getValue() < dataStartTimeParam.getValue()) {
-					dataStartTimeParam.setValue(forecastStartTimeParam.getValue());
-					dataStartTimeParam.getEditor().refreshParamEditor();
-				}
-
-				if(!prReportMode) {
-					setEnableParamsPostFetch(false);
-				}
-
-				try{
-					if(!prReportMode) {
-						dataEndTimeParam.setValue(forecastStartTimeParam.getValue());
-						dataEndTimeParam.getEditor().refreshParamEditor();
-					}
-					forecastEndTimeParam.setValue(forecastStartTimeParam.getValue() + forecastDurationParam.getValue().getValueNumeric());
-					forecastEndTimeParam.getEditor().refreshParamEditor();
-					
-					if (mainshock != null) {
-						GregorianCalendar mainshockDate = mainshock.getOriginTimeCal();
-						mainshockDate.setTimeInMillis((long)(mainshock.getOriginTime() + forecastStartTimeParam.getValue()*ETAS_StatsCalc.MILLISEC_PER_DAY ));
-						DateFormat df = new SimpleDateFormat();
-						dateStartString.setValue(df.format(mainshockDate.getTime()));
-						dateStartString.getEditor().refreshParamEditor();
-					} 
-					
-				} finally {
-				}
-				refreshTimeWindowEditor();
+				CalcRunnable run = new CalcRunnable(progress, updateForecastStartTimeStep);
+				new Thread(run).start();
 				
-				
-
 			} else if (param == regionTypeParam || param == regionCenterTypeParam) {
-//				if(verbose) System.out.println("Updating regionType");
-				updateRegionParamList(regionTypeParam.getValue(), regionCenterTypeParam.getValue());
-		
+				CalcRunnable run = new CalcRunnable(progress, updateRegionStep);
+				
+				new Thread(run).start();
+				
 			} else if (param == fetchButton) {
-				// reset the workspace added 11/29/18
-				resetWorkspace();
-
 				System.out.println("Fetching events from ComCat...");
-				setEnableParamsPostFetch(false);
+				// reset the workspace added 11/29/18
 
-				CalcStep fetchTabRefreshStep = new CalcStep("Plotting",  "Updating plots...", new Runnable() {
-
+				CalcStep fetchButtonPressedStep = new CalcStep("Fetch","Fetching data...", new Runnable() {
 					@Override
 					public void run() {
-						refreshTabs(cml_num_tab_index);
+//						if (forecastStartTime == null)
+//							forecastStartTime = now
+							resetWorkspace();
+					setEnableParamsPostFetch(false);
 					}
 				}, true);
-
-				CalcStep fetchTabSelectStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
-
-					@Override
-					public void run() {
-						tabbedPane.setSelectedIndex(epicenter_tab_index);
-					}
-
-				}, true);
-
 				
 				
 				tipStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
-
 					@Override
 					public void run() {
 						printTip(2);
 					}
-
 				}, true);
 
 				// this is some custom configuration for the PuertoRico sequence. (NJV 7/3/2020)
@@ -4074,24 +4593,26 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				CalcRunnable run;
 				if (prForecastMode) {
 					run = new CalcRunnable(progress,
+							fetchButtonPressedStep,
 							fetchCatalogStep, 
 							setMainshockStep,
 							postFetchCalcStep,
 							postFetchPlotStep,
-							fetchTabRefreshStep,
-							fetchTabSelectStep,
+							refreshCmlNumTabStep,
+							selectEpicenterTabStep,
 							prForecastStep,
 							enforceRJstep,
 							tipStep);
 					
 				} else {
 					run = new CalcRunnable(progress,
+						fetchButtonPressedStep,
 						fetchCatalogStep, 
 						setMainshockStep,
 						postFetchCalcStep,
 						postFetchPlotStep,
-						fetchTabRefreshStep,
-						fetchTabSelectStep,
+						refreshCmlNumTabStep,
+						selectEpicenterTabStep,
 						enforceRJstep,
 						tipStep);
 				}
@@ -4102,67 +4623,44 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				final File[] file = new File[1];
 
-
 				if (loadCatalogChooser == null)
 					loadCatalogChooser = new JFileChooser();
 				loadCatalogChooser.setCurrentDirectory(workingDir);
 
 				int ret = loadCatalogChooser.showOpenDialog(this);
+				
 				if (ret == JFileChooser.APPROVE_OPTION) {
 					file[0] = loadCatalogChooser.getSelectedFile();
 				} else {
 					throw new IllegalStateException("File selection was canceled or an error occured");
 				}
+				
+				CalcStep loadStep = new CalcStep("Loading Catalog", "Loading events from local catalog...", new Runnable() {
+					@Override
+					public void run() {
+						try {
+							loadCatalog(file[0]);
+							setEnableParamsPostFetch(false);
 
-			
-				if(true) {
-					CalcStep loadStep = new CalcStep("Loading Catalog", "Loading events from local catalog...", new Runnable() {
-
-						@Override
-						public void run() {
-							try {
-								loadCatalog(file[0]);
-								setEnableParamsPostFetch(false);
-
-							} catch (IOException e) {
-								ExceptionUtils.throwAsRuntimeException(e);
-							}
+						} catch (IOException e) {
+							ExceptionUtils.throwAsRuntimeException(e);
 						}
-					}, true);
+					}
+				}, true);
 
+				tipStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
 
-					tabRefreshStep = new CalcStep("Plotting",  "Updating plots...", new Runnable() {
+					@Override
+					public void run() {
+						printTip(2);
+					}
 
-						@Override
-						public void run() {
-							refreshTabs(cml_num_tab_index);
-						}
-					}, true);
+				}, true);
 
-					tabSelectStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
-
-						@Override
-						public void run() {
-							tabbedPane.setSelectedIndex(epicenter_tab_index);
-						}
-
-					}, true);
-
-
-					tipStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
-
-						@Override
-						public void run() {
-							printTip(2);
-						}
-
-					}, true);
-
-					CalcRunnable run = new CalcRunnable(progress, loadStep, setMainshockStep, postFetchCalcStep, postFetchPlotStep,
-							tabRefreshStep, tabSelectStep, tipStep);
-					new Thread(run).start();
-
-				}
+				CalcRunnable run = new CalcRunnable(progress, loadStep, setMainshockStep, postFetchCalcStep, postFetchPlotStep,
+						refreshCmlNumTabStep, selectEpicenterTabStep, tipStep);
+				
+				new Thread(run).start();
 
 			} else if (param == saveCatalogButton) {
 				System.out.println("Saving Catalog to file...");
@@ -4193,20 +4691,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				}
 				
 			} else if (param == mcParam){ // || param == magPrecisionParam) {
-//				if(verbose) System.out.println("Updating Mc");
-				
 				changeListenerEnabled = false;
-				
 				setEnableParamsPostComputeMc(false);
-
 				validateMcParam(); //takes care of the following commented bit
-//				// check that it's not greater than mainshock magnitude
-//				if(mcParam.getValue() > mainshock.getMag() - 0.05){
-//					System.err.println("Mc cannot be set to larger than the mainshock magnitude");
-//					mcParam.setValue(round(mainshock.getMag() - 0.05,2));
-//					mcParam.getEditor().refreshParamEditor();
-//				} 
-				
 				changeListenerEnabled = true;
 
 				CalcStep setMcStep = new CalcStep("Calculating","Recalculating Mc with generic b-value...", new Runnable() {
@@ -4325,56 +4812,36 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				new Thread(run).start();
 				
 			} else if (param == tectonicRegimeParam) {
-
-				CalcStep updateTectonicRegimeStep = new CalcStep("Updating Model", "Updating generic parameters to " + tectonicRegimeParam.getValue() + "...", new Runnable() {
-
-					@Override
-					public void run() {
-						setEnableParamsPostAftershockParams(false);
-						setEnableParamsPostComputeB(false);
-
-						genericParams = genericFetch.get(tectonicRegimeParam.getValue());
-						Preconditions.checkNotNull(genericParams, "Generic params not found or server error");
-						if(verbose) System.out.println("Updating Generic model params to " + tectonicRegimeParam.getValue() + ": "+genericParams);
-
-						//update Parameter Ranges (code at 1938 in set mainshock)
-						updateParameterGenericRanges();
-						
-						
-						setMagComplete();
-					}
-				}, true);
-
 				CalcRunnable run = new CalcRunnable(progress, updateTectonicRegimeStep, updateModelStep);
 				new Thread(run).start();
 
 			} else if (param == amsValRangeParam || param == amsValNumParam) {
 				
-				updateRangeParams(amsValRangeParam, amsValNumParam, 31);
+				updateRangeNumParams(amsValRangeParam, amsValNumParam, 31);
 				setEnableParamsPostAftershockParams(false);
 				setEnableParamsPostComputeB(false);
 
 			} else if (param == aValRangeParam || param == aValNumParam) {
 				
-				updateRangeParams(aValRangeParam, aValNumParam, 31);
+				updateRangeNumParams(aValRangeParam, aValNumParam, 31);
 				setEnableParamsPostAftershockParams(false);
 				setEnableParamsPostComputeB(false);
 
 			} else if (param == pValRangeParam || param == pValNumParam) {
 				
-				updateRangeParams(pValRangeParam, pValNumParam, 31);
+				updateRangeNumParams(pValRangeParam, pValNumParam, 31);
 				setEnableParamsPostAftershockParams(false);
 				setEnableParamsPostComputeB(false);
 
 			} else if (param == cValRangeParam || param == cValNumParam) {
 				
-				updateRangeParams(cValRangeParam, cValNumParam, 31);
+				updateRangeNumParams(cValRangeParam, cValNumParam, 31);
 				setEnableParamsPostAftershockParams(false);
 				setEnableParamsPostComputeB(false);
 			
 			} else if (param == muValRangeParam || param == muValNumParam) {
 				
-				updateRangeParams(muValRangeParam, muValNumParam, 31);
+				updateRangeNumParams(muValRangeParam, muValNumParam, 31);
 				setEnableParamsPostAftershockParams(false);
 				setEnableParamsPostComputeB(false);
 				
@@ -4446,8 +4913,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				}, true);
 
-//				CalcRunnable run = new CalcRunnable(progress, genericForecastStep, seqSpecForecastStep, bayesianForecastStep,
-//						plotStep, plotTableStep, tabSelectStep, tipStep);
 				CalcRunnable run = new CalcRunnable(progress, genericForecastStep, bayesianForecastStep,
 						plotStep, plotTableStep, tabSelectStep, tipStep);
 				new Thread(run).start();
@@ -4485,6 +4950,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else if (param == generateMapButton) {
 				System.out.println("Computing spatial forecast map...");
 
+				if (faultTrace == null && fitSourceTypeParam.getValue() == FitSourceType.CUSTOM) {
+					loadSourceFromFile();
+				}
+				
 				CalcStep checkValuesStep = new CalcStep("Validating", "Checking parameter values...", new Runnable() {
 					
 					@Override
@@ -4500,14 +4969,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				}, true);
 				
-				CalcStep fetchCitiesStep = new CalcStep("Building map","Loading geographical information...", new Runnable() {
-
-					@Override
-					public void run() {
-//						loadCities(); //this is contained in the make map step
-					}
-
-				}, true);
+//				CalcStep fetchCitiesStep = new CalcStep("Building map","Loading geographical information...", new Runnable() {
+//
+//					@Override
+//					public void run() {
+////						loadCities(); //this is contained in the make map step
+//					}
+//
+//				}, true);
 				
 				tipStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
 
@@ -4518,102 +4987,23 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 
 				}, true);
 
-				CalcRunnable run = new CalcRunnable(progress, checkValuesStep, fetchSourceStep, fetchCitiesStep, plotMapStep, tipStep);
+				CalcRunnable run = new CalcRunnable(progress, checkValuesStep, fetchSourceStep, plotMapStep, tipStep);
 				new Thread(run).start();
 			} else if (param == plotSpecificOnlyParam) {
 				printTip(7);
 				
 //			} else if (param == writeStochasticEventSets) {
 				
-				
 			} else if (param == publishAdvisoryButton) {
 				System.out.println("Generating advisory document...");
 
-				CalcStep pubStep = new CalcStep("Building Document", "Building aftershock forecast summary...",
-						new Runnable() {
-
-					@Override
-					public void run() {
-						publishGraphicalForecast();
-					}
-
-				}, true);
 			
-				CalcStep quickTabRefreshStep = new CalcStep("Plotting","Updating plots...", new Runnable() {
-
-					@Override
-					public void run() {
-						refreshTabs(forecast_map_tab_index);
-					}
-
-				}, true);
-
 				CalcRunnable run = new CalcRunnable(progress);
 				
-			
-//				if (!plotAllDurationsParam.getValue() && forecastDurationParam.getValue() == ForecastDuration.YEAR){
-//					// Is this dead code?
-//					
-//					CalcStep updateForecastWindowStep = new CalcStep( "Updating", "Updating foreacst duration", new Runnable() {
-//						@Override
-//						public void run() {
-//							plotAllDurationsParam.setValue(true);
-//							plotAllDurationsParam.getEditor().refreshParamEditor();
-//						}
-//					}, true);
-//					
-//					run = new CalcRunnable(progress,
-//							updateForecastWindowStep,
-//							postForecastPlotStep, 
-//							fetchSourceStep,
-//							plotMapStep,
-//							pubStep, 
-//							autoSaveStep);	
-//					
-//				} else if (forecastDurationParam.getValue() !=  ForecastDuration.YEAR) {
-//					// is this dead code? I don't think I want it to always go to a year...
-//					CalcStep updateForecastWindowStep = new CalcStep( "Updating", "Updating foreacst duration", new Runnable() {
-//						@Override
-//						public void run() {
-//
-//							plotAllDurationsParam.setValue(true);
-//							plotAllDurationsParam.getEditor().refreshParamEditor();
-//							forecastDurationParam.setValue(ForecastDuration.YEAR);
-//							forecastDurationParam.getEditor().refreshParamEditor();
-//							updateForecastTimes();
-//						}
-//					}, true);
-//					
-//					run = new CalcRunnable(progress, 
-//							updateForecastWindowStep,
-////							computeAftershockParamStep,
-//							computeBayesStep,
-//							postParamPlotStep,
-//							genericForecastStep,
-////							seqSpecForecastStep,
-//							bayesianForecastStep,
-//							postForecastPlotStep,
-//							plotTableStep,
-//							fetchSourceStep,
-//							plotMapStep,
-//							quickTabRefreshStep,
-//							pubStep,
-//							autoSaveStep);
-//				} else
-				
-//				if (forecastDurationParam.getValue() != ForecastDuration.YEAR) {
-//					// error message
-//
-//					String message = "The graphical summary can only be generated for a Forecast Duration of one Year. Set Forecast Duration to \"Year\" and regenerate the forecast.";
-//					System.out.println(message);
-//					JOptionPane.showMessageDialog(null, message, "", JOptionPane.ERROR_MESSAGE);
-//					return;
-//
-//				} else { 
-					run = new CalcRunnable(progress, fetchSourceStep, pubStep, autoSaveStep);
-					
-					new Thread(run).start();
-//				}
+				run = new CalcRunnable(progress, fetchSourceStep, pubStep, autoSaveStep);
+
+				new Thread(run).start();
+
 			} else if (param == intensityTypeParam || param == mapTypeParam) {
 //				if(verbose) System.out.println("updating map panel");
 				updateMapPanel();
@@ -4928,7 +5318,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				names.add("Sequence-specific");
 			}
 			
-			if (genericModel != null) {
+			if (genericModel != null && !plotSpecificOnlyParam.getValue()) {
 				models.add(genericModel);
 				names.add("Generic forecast");
 			}	
@@ -4989,7 +5379,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			
 			double spacing = mapGridSpacingParam.getValue()/111.111; 	// grid spacing in degrees
 			double scale = mapScaleParam.getValue();
-			double stressDrop = 2.0; 	//MPa
+			
+			double stressDrop = 2.0; 	//MPa this gives a scaling for the source length.
+			
 			double mainshockFitDuration = dataEndTimeParam.getValue(); //days
 			Double minDays = forecastStartTimeParam.getValue();
 			double maxZ = 0;
@@ -4999,8 +5391,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 //			if (fitMainshockSourceParam.getValue())
 			if (fitSourceTypeParam.getValue() == FitSourceType.AFTERSHOCKS)
 				fitType = "aftershocks";
-			else if (fitSourceTypeParam.getValue() == FitSourceType.SHAKEMAP)
-				fitType = "shakemap";
+//			else if (fitSourceTypeParam.getValue() == FitSourceType.SHAKEMAP)
+//				fitType = "shakemap";
 			else if (fitSourceTypeParam.getValue() == FitSourceType.CUSTOM)
 				fitType = "custom";
 			else
@@ -5037,6 +5429,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				isMapOfProbabilities = true;		// plotting probabilities at a given level			
 			}
 
+			
 			// calculate gmpe probabilities for one day
 			GriddedGeoDataSet gmpeProbModel = getIntensityModel(forecastRateModel, value, isMapOfProbabilities, true);
 			
@@ -5103,24 +5496,24 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else if (mapTypeParam.getValue()==MapType.LEVEL) {
 				switch (intensityTypeParam.getValue()) {
 					case MMI:
-						minColorLevel = 4;
-						minContourLevel = 4;
+						minColorLevel = 1; //why is it 4? something about the GMPE range of applicability?
+						minContourLevel = 1;
 						maxContourLevel = 5;
 						break;
 					case PGA:
 						minColorLevel = 0;
-						minContourLevel = 3;
-						maxContourLevel = 4;
+						minContourLevel = 0;
+						maxContourLevel = 1;
 						break;
 					case PGV:
 						minColorLevel = 0;
-						minContourLevel = 2;
-						maxContourLevel = 3;
+						minContourLevel = 0;
+						maxContourLevel = 1;
 						break;
 					case PSA:
 						minColorLevel = 0;
-						minContourLevel = 3;
-						maxContourLevel = 4;
+						minContourLevel = 0;
+						maxContourLevel = 1;
 						break;
 					default:
 						minColorLevel = 0;
@@ -5133,10 +5526,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			// moved here so that canceling map generation will still leave you with the previous maps.
 			if (forecastMapPane == null)
 				forecastMapPane = new JTabbedPane();
-			else
+			else {
+				// TODO: remember which pane was selected.
+				
 				while (forecastMapPane.getTabCount() > 0)
 					forecastMapPane.removeTabAt(0);
-	
+			}
 			// clear out (or initialize) the contourModel
 			contourList = new ArrayList<ContourModel>();
 			
@@ -5214,12 +5609,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						
 						double magRef = 3.5;
 						double magScaleFactor = Math.pow(10, -bParam.getValue()*(magRef - mcParam.getValue()));
-						double gridRef = 1;
+						double gridRef = 111*111;
 						double gridScaleFactor = Math.pow(gridRef/mapGridSpacingParam.getValue(),2);
 						scaledRateModel.scale(magScaleFactor*gridScaleFactor);
 						
 						if (D) System.out.println("forecastRateModel sum: " + forecastRateModel.getSumZ() + " after scaling clone");
 						if (D) System.out.println("scaledRateModel sum: " + scaledRateModel.getSumZ());
+						if (D) System.out.println("scaledRateModel max: " + scaledRateModel.getMaxZ());
 						
 						maxZ = scaledRateModel.getMaxZ();
 						CPT cpt = getProbCPT().rescale(0, maxZ);
@@ -5227,6 +5623,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						List<PolyLine> rateContours = ETAS_RateModel2D.getContours(scaledRateModel, 20);
 						List<PlotElement> funcs = Lists.newArrayList();
 						List<PlotCurveCharacterstics> chars = Lists.newArrayList();
+						if (D) System.out.println(rateContours.size() + " rate contours computed");
 						
 						// add epicenters to map
 						for (int j = 0; j < oldFuncs.size(); j++ ){
@@ -5258,7 +5655,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							chars.add(new PlotCurveCharacterstics(PlotLineType.SOLID, 1, Color.GRAY));
 						}
 						
-						PlotSpec spec = new PlotSpec(funcs, chars, "Past Aftershocks (dots) and expected number of M≥" + String.format("%2.1f", magRef)  + " aftershocks\n per square km in the next day (contours)", "Longitude", "Latitude");
+						PlotSpec spec = new PlotSpec(funcs, chars, "Past Aftershocks (dots) and expected number of M≥" + String.format("%2.1f", magRef)  + " aftershocks\n per square degree in the next day (contours)", "Longitude", "Latitude");
 //						PlotSpec spec = new PlotSpec(funcs, chars, "Probable location of the next aftershock", "Longitude", "Latitude");
 						
 						spec.setPlotAnnotations(cityLabels);
@@ -5297,8 +5694,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 								intensityTypeParam.getValue() == IntensityType.PSA)
 							new_gmpeProbModel.scale(100d);
 
-						// update the max contour level for setting the colorscale
-//						if (new_gmpeProbModel.getMaxZ() > maxContourLevel) //uncomment to scale evrything to year maxcontour 
+//						 update the max contour level for setting the colorscale
+						if (new_gmpeProbModel.getMaxZ() > maxContourLevel) //uncomment to scale evrything to year maxcontour 
 							maxContourLevel = new_gmpeProbModel.getMaxZ();
 
 						// set up the contours, with colors
@@ -5327,8 +5724,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							} else
 								cpt2 = getProbCPT().rescale(minColorLevel, Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel));
 							
-//							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel),21);	//specify contourLevels directly
-							contourLevels = new double[]{1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,6,7.5,8,8.5,9,9.5,10}; 
+							contourLevels = ETAS_StatsCalc.linspace(minContourLevel,Math.max(new_gmpeProbModel.getMaxZ(),maxContourLevel),21);	//specify contourLevels directly
+//							contourLevels = new double[]{1,1.5,2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,6,7.5,8,8.5,9,9.5,10}; 
 						}
 						List<PolyLine> contours = ETAS_RateModel2D.getContours(new_gmpeProbModel, contourLevels);
 						
@@ -5343,10 +5740,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							if(verbose){ System.out.println("contour levels: " + outString);
 						}
 
+							
 						// set up the map title
+				
 						String title = "";
 						String units = "";
 						String contourUnits = "";
+						String formatStr = "%." + (maxPlottedContour < 10 ? (maxPlottedContour < 1 ? 2  : 1) : 0) + "f";
 						if (mapTypeParam.getValue() == MapType.LEVEL) {
 							String level;
 							if (intensityTypeParam.getValue() == IntensityType.MMI) {
@@ -5355,10 +5755,12 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 								else
 									level = "<" + decToRoman((int) minContourLevel);
 							} else {
-								if (maxPlottedContour > 0)
-									level = String.format("%.0f", maxPlottedContour);
+								if (maxPlottedContour > 0) {
+									
+									level = String.format(formatStr,maxPlottedContour);
+								}
 								else
-									level = String.format("<%.0f", minContourLevel);
+									level = "<" + String.format(formatStr, minContourLevel);
 							}
 							
 							
@@ -5371,7 +5773,11 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 								units = "";
 						
 							String intensityType = intensityTypeParam.getValue().getAbbreviation();
-							String probability = String.format("%.0f", mapPOEParam.getValue());
+							
+							String formatStr2 = "%." + (mapPOEParam.getValue() < 10 ? (mapPOEParam.getValue() < 1 ? 2  : 1) : 0) + "f";
+							String probability = String.format(formatStr2, mapPOEParam.getValue());
+							
+							
 							title = intensityType + " with " + probability + "% chance of being exceeded in the next " + durString + " (max: " + level + units + ")";
 							units = "%";
 						} else if (mapTypeParam.getValue() == MapType.PROBABILITIES) {
@@ -5379,9 +5785,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 							String level;
 							if (intensityTypeParam.getValue() == IntensityType.MMI)
 								level = decToRoman((int) (Math.floor(mapLevelParam.getValue() + 0.01)));
-							else
+							else {
 								level = String.format("%.0f", mapLevelParam.getValue());
-							
+							}
 							if (intensityTypeParam.getValue() == IntensityType.PGA ||
 									intensityTypeParam.getValue() == IntensityType.PSA) 
 								units = "%g";
@@ -5497,6 +5903,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 						tabbedPane.removeTabAt(forecast_map_tab_index);
 						tabbedPane.insertTab("Forecast Maps", null, forecastMapPane,
 								"Forcast Maps (rate, intensity)", forecast_map_tab_index);
+						// TODO select the same map tab that was selected before the update.
 					}
 					else
 						Preconditions.checkState(tabbedPane.getTabCount() > forecast_map_tab_index, "Plots added out of order");
@@ -5893,21 +6300,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			return null;
 		 
 		// the gmpeRateModel is the prob model converted to Poisson rate 
-//		GriddedGeoDataSet gmpeRateModel = gmpeProbModel.copy();
 		GriddedGeoDataSet gmpeRateModel = cloneGriddedGeoDataSet(gmpeProbModel);
 
 		poissProb2Rate(gmpeRateModel); //convert the probabilities to a rate, for scaling.
 
-//		//compute rate sum for reference model
-//		double gmpeRateSum = 0;
-//		for (int j = 0; j < gmpeRateModel.size(); j++){
-//			if (!Double.isNaN(gmpeRateModel.get(j)))
-//				gmpeRateSum += gmpeRateModel.get(j);
-//		}
-		
-//		if(D) System.out.println("gmpeRateModel sum: " + gmpeRateSum + " max: " + gmpeProbModel.getMaxZ());
-
-//		gmpeRateModel.scale(targetRate/gmpeRateSum);
 		gmpeRateModel.scale(targetRate/referenceRate);
 		GriddedGeoDataSet new_gmpeProbModel = rate2PoissProb(gmpeRateModel);
 
@@ -6046,9 +6442,9 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			System.err.println("Couldn't save forecast summary to: " + outFile);
 			e.printStackTrace();
 		}
-		
 	}
 	
+		
 	private void publishGraphicalForecast(){
 		// pick a file and directory to write HTML document summary 		
 		File outFile;
@@ -6067,7 +6463,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	}
 	
 	private void publishGraphicalForecast(File outFile){
-		//this is cribbed from the previous method
+		
 		GregorianCalendar eventDate = mainshock.getOriginTimeCal();
 		GregorianCalendar startDate = new GregorianCalendar();
 		Double minDays = forecastStartTimeParam.getValue();
@@ -6241,7 +6637,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				System.out.println("No shaking maps computed.");
 			}
 
-			// Write Contours to file
+			// Write Contours to file  TODO: make this a json
 			if(contourList != null) {
 				for(ForecastDuration foreDur : ForecastDuration.values()){
 					// find the matching contour set
@@ -6261,34 +6657,51 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else {
 				System.out.println("No forecast contours computed.");
 			}
-
 			
-			// Write griddedRateMap to file
-//			for(ForecastDuration foreDur : ForecastDuration.values()){
-				// find the matching griddedDataSet
-				if(gmpeProbModelList != null) {
-					int nmap = 0;
-					for (GriddedGeoDataSet gmpeMap : gmpeProbModelList){
-						ForecastDuration foreDur = ForecastDuration.values()[nmap++];
-						
-						String name = "shakingGrid-" + foreDur.toString();
-						File file = new File(outFile.getParent() + "/" + name + ".csv");
-						System.out.println("Saving shaking grid to: " + file);
-						
-						if (gmpeMap != null) {
-							try {
-								rateModel2D.writeGriddedDataAsCSV(gmpeMap, file);
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								System.out.println("Unable to save shaking grid to: " + file +". Shaking data may not exist.");
-								e.printStackTrace();
-							}
-						} else {
-							System.out.println("No shaking model found for duration: "  + foreDur);
+			
+			
+
+			// Write griddedRateMap to JSON file 
+			try {
+			rateModel2D.writeGriddedDataAsJson(
+					mainshock, dateStartString.getValue(),  
+					forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), mapGridSpacingParam.getValue(),
+					mapTypeParam.getValue().toString(),intensityTypeParam.getValue().toString(), mapLevelParam.getValue(), mapPOEParam.getValue(),
+					gmpeProbModelList, outFile);
+			} catch (IOException e) {
+				System.out.println("shaking json not written.");
+			}
+			
+			
+			
+			
+			
+			// Write griddedRateMap to csv 
+			if(gmpeProbModelList != null) {
+				int nmap = 0;
+				for (GriddedGeoDataSet gmpeMap : gmpeProbModelList){
+					ForecastDuration foreDur = ForecastDuration.values()[nmap++];
+
+					String name = "shakingGrid-" + foreDur.toString();
+					File csvFile = new File(outFile.getParent() + "/" + name + ".csv");
+					System.out.println("Saving shaking grid to: " + csvFile);
+					File mapJsonFile = new File(outFile.getParent() + "/" + name + ".json");
+					System.out.println("Saving shaking grid to: " + mapJsonFile);
+
+					if (gmpeMap != null) {
+						try {
+							rateModel2D.writeGriddedDataAsCSV(gmpeMap, csvFile);
+							
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							System.out.println("Unable to save shaking grid. Shaking data may not exist.");
+							e.printStackTrace();
 						}
+					} else {
+						System.out.println("No shaking model found for duration: "  + foreDur);
 					}
 				}
-//			}
+			}
 
 
 			
@@ -6298,12 +6711,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			InputStream logoIS;
 			
 			// load the local institution logo
-			pngFileOut = "Logo.png";
-			if (publishUSGS) 
-				pngFileIn = "USGS_logo.png";
-			else
-				pngFileIn = "USAID_logo.png";
-
+			pngFileOut = "USGS_logo.png";
+			pngFileIn = pngFileOut;
 			logoIS = GraphicalForecast.class.getResourceAsStream("resources/" + pngFileIn);
 			if (logoIS != null){
 
@@ -6319,24 +6728,28 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				System.err.println("Couldn't locate file: " + pngFileIn);
 			}
 
+			
+			
 //			// load the BHA logo
-//			pngFileIn = "USAID_logo.png";
-//			pngFileOut = pngFileIn;
-//			logoIS = GraphicalForecast.class.getResourceAsStream("resources/" + pngFileIn);
-//			if (logoIS != null){
-//			
-//				File destination = new File(outFile.getParent() + "/" + pngFileOut);
-//
-//				try {
-//					FileUtils.copyInputStreamToFile(logoIS, destination);
-//				} catch (IOException e) {
-//				    e.printStackTrace();
-//					System.err.println("Couldn't copy: " + pngFileIn + " to file: " + destination);
-//				}
-//			} else {
-//				System.err.println("Couldn't locate file: " + pngFileIn);
-//			}
+			pngFileOut = "StateDept_logo.png";
+			pngFileIn = pngFileOut;
+			logoIS = GraphicalForecast.class.getResourceAsStream("resources/" + pngFileIn);
+			if (logoIS != null){
+			
+				File destination = new File(outFile.getParent() + "/" + pngFileOut);
 
+				try {
+					FileUtils.copyInputStreamToFile(logoIS, destination);
+				} catch (IOException e) {
+				    e.printStackTrace();
+					System.err.println("Couldn't copy: " + pngFileIn + " to file: " + destination);
+				}
+			} else {
+				System.err.println("Couldn't locate file: " + pngFileIn);
+			}
+
+			
+			
 			if (writeStochasticEventSets.getValue()) {
 				
 				new File(outFile.getParent() + "/forecastSets/").mkdirs();
@@ -6395,10 +6808,10 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		genericModel = null;
 		bayesianModel = null;
 //		seqSpecModel = null;
-		faultTrace = null;
+//		faultTrace = null; // leave it alone, if it is loaded once, always load it
 		contourList = null;
-		
 	}
+	
 	
 	private void doPostFetchCalculations() {
 		// update the grid spacing based on the region size
@@ -6406,8 +6819,41 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				round((region.getMaxLat() - region.getMinLat())*111.111/20,1) ));
 		mapGridSpacingParam.getEditor().refreshParamEditor();
 		
+		// update the regime based on the centroid/region location
+		TectonicRegime regime;
+		
+		try {
+			if(verbose) System.out.println("Determining tectonic regime at centroid...");
+			TectonicRegimeTable regime_table = new TectonicRegimeTable();
+			// re-assign the regime from AS centroid location, when aftershocks are loaded.
+			String regimeName = regime_table.get_strec_name(regionCenterLatParam.getValue(), regionCenterLonParam.getValue());
+			regime = TectonicRegime.forName(regimeName);
+					
+		} catch (RuntimeException e) {
+			System.out.println("Error fetching generic params. Assigning global average values");
+			regime = TectonicRegime.GLOBAL_AVERAGE;	
+		}
+		
+		if (regime == null){
+			System.out.println("Error fetching generic params. Assigning global average values");
+			regime = TectonicRegime.GLOBAL_AVERAGE;
+		}			
+		
+		genericParams = genericFetch.get(regime);
+		try{
+			Preconditions.checkNotNull(genericParams, "Generic params not found or server error");
+		}catch (Exception e){
+			System.out.println("Error retrieving generic parameters for tectonic regime: " + regime);
+		}
+		if(verbose) System.out.println("Generic params for "+regime+": "+genericParams);
+		
+		updateParameterGenericRanges(); //this one adjusts productivity search range to account for changes in Mc.  
 		// reset the fit constraint sub menu with range around new generic values
-		resetFitConstraints(genericParams);
+//			resetFitConstraints(genericParams);
+
+		tectonicRegimeParam.setValue(regime);
+		tectonicRegimeParam.getEditor().refreshParamEditor();
+		
 		
 
 	}
@@ -6503,25 +6949,26 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private void refreshTimeWindowEditor(){
 		boolean now = nowBoolean.getValue();
 		
+//		forecastStartTimeParam.getEditor().setVisible(!now);
+		forecastStartTimeParam.getEditor().setEnabled(!now);
+		forecastStartTimeParam.getEditor().refreshParamEditor();
 		
-		forecastStartTimeParam.getEditor().setVisible(!now);
-		
-		if (forecastStartTimeParam.getValue() == null){
-			fetchButton.getEditor().setEnabled(now);
-			fetchButton.getEditor().refreshParamEditor();
-			quickForecastButton.getEditor().setEnabled(now);
-			quickForecastButton.getEditor().refreshParamEditor();
-		}
-		else{
-			fetchButton.getEditor().setEnabled(true);
-			fetchButton.getEditor().refreshParamEditor();
-			quickForecastButton.getEditor().setEnabled(true);
-			quickForecastButton.getEditor().refreshParamEditor();
-		}
+//		if (forecastStartTimeParam.getValue() == null){
+//			fetchButton.getEditor().setEnabled(now);
+//			fetchButton.getEditor().refreshParamEditor();
+//			quickForecastButton.getEditor().setEnabled(now);
+//			quickForecastButton.getEditor().refreshParamEditor();
+//		}
+//		else{
+//			fetchButton.getEditor().setEnabled(true);
+//			fetchButton.getEditor().refreshParamEditor();
+//			quickForecastButton.getEditor().setEnabled(true);
+//			quickForecastButton.getEditor().refreshParamEditor();
+//		}
 		
 //		dataStartTimeParam.getEditor().setEnabled(!now);
-		dataEndTimeParam.getEditor().setEnabled(!now);
-		forecastStartTimeParam.getEditor().setEnabled(!now);
+//		dataEndTimeParam.getEditor().setEnabled(!now);
+//		forecastStartTimeParam.getEditor().setEnabled(!now);
 		
 		if (mainshock != null) {
 			GregorianCalendar mainshockDate = mainshock.getOriginTimeCal();
@@ -6533,98 +6980,66 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		}
 	}
 		
+
+
+	private void updateParameterGenericRanges() {
+//	private void resetFitConstraints(GenericETAS_Parameters params){ //this function was replaced by the new code
+		if(verbose)System.out.println("Updating fit constraints based on the tectonic regime generic params...");
+		
+		if(genericParams == null)
+			return;
+		
 	
-	private void resetFitConstraints(GenericETAS_Parameters params){
-		if(verbose)System.out.println("Updating fit constraints based on new generic params...");
-		// this was put in to try to prevent unstable results from going unnoticed, but it is overly restrictive
+		double new_ams = genericParams.get_ams();
+		double new_a = genericParams.get_a();
 		
-//		boolean restrictParameters = false; 
-				
-//		double new_ams = params.get_ams();
-//		double new_a = params.get_a();
-//			
-//		//correct the a-value if Mc is not the same as refMag
-//		double refMag = params.get_refMag();
-//		double maxMag = params.get_maxMag();
-//		double mc = mcParam.getValue();
-//			
-//		double aAdjustmentForMc = Math.log10((maxMag - refMag)/(maxMag - mc));
-//		new_ams += aAdjustmentForMc;
-//		new_a += aAdjustmentForMc;
-//		
-//		double min_ams = amsValRangeParam.getValue().getLowerBound();
-//		double max_ams = amsValRangeParam.getValue().getUpperBound();
-//		
-//		double min_a = aValRangeParam.getValue().getLowerBound();
-//		double max_a = aValRangeParam.getValue().getUpperBound();
-//		
-//		amsValRangeParam.setValue(new Range(min_ams + aAdjustmentForMc, max_ams + aAdjustmentForMc));
-		amsValRangeParam.getEditor().refreshParamEditor();
-//
-//		aValRangeParam.setValue(new Range(min_a + aAdjustmentForMc, max_a + aAdjustmentForMc));
-		aValRangeParam.getEditor().refreshParamEditor();
+		//correct the a-value if Mc is not the same as refMag
+		double refMag = genericParams.get_refMag();
+		double maxMag = genericParams.get_maxMag();
+		double mc = mcParam.getValue();
+		
+		double aAdjustmentForMc = Math.log10((maxMag - refMag)/(maxMag - mc));
+		new_ams += aAdjustmentForMc;
+		new_a += aAdjustmentForMc;
 
-//		double new_p = params.get_p();
-//		double new_c = params.get_c();
+		amsValRangeParam.setValue(new Range(round(new_ams-4*genericParams.get_aSigma(),2), round(new_ams+4*genericParams.get_aSigma(),2)));
 		
-		//make sure there is not a negative p value.
-		double min_p = pValRangeParam.getValue().getLowerBound();
-		if (min_p < 0.1)
-			min_p = 0.1;
-		double max_p = pValRangeParam.getValue().getUpperBound();
-		pValRangeParam.setValue(new Range(min_p, max_p));
-		pValRangeParam.getEditor().refreshParamEditor();
-		pValNumParam.getEditor().refreshParamEditor();
-		
-		//make sure the generic parameter setting didn't result in a nan or something too small for the computer
-		double min_c = cValRangeParam.getValue().getLowerBound();
-		if (Double.isNaN(min_c) || min_c < 1e-5)
-			min_c = 1e-5;
-		double max_c = cValRangeParam.getValue().getUpperBound();
-		cValRangeParam.setValue(new Range(min_c, max_c));
-		cValRangeParam.getEditor().refreshParamEditor();
-		cValNumParam.getEditor().refreshParamEditor();
-		
-//		
-//		double max_c = cValRangeParam.getValue().getUpperBound();
-//		if(max_c > 1)
-//			max_c = 1;
-//		if(max_c < min_c)
-//			max_c = min_c;
-		
-		// recenter the ranges around the new parameter values
-//		amsValRangeParam.setValue(new Range(round(new_ams - (max_ams - min_ams)/2,2), round(new_ams + (max_ams - min_ams)/2,2)));
-//		amsValRangeParam.getEditor().refreshParamEditor();
-//
-//		aValRangeParam.setValue(new Range(round(new_a - (max_a - min_a)/2,2), round(new_a + (max_a - min_a)/2,2)));
-//		aValRangeParam.getEditor().refreshParamEditor();
-//		aValRangeParam.getEditor().setEnabled(true);
-//
-//		aValNumParam.getEditor().refreshParamEditor();
-//		aValNumParam.getEditor().setEnabled(true);	
+		aValRangeParam.setValue(new Range(round(new_a-4*genericParams.get_aSigma(),2), round(new_a+4*genericParams.get_aSigma(),2)));
 
-//		pValRangeParam.setValue(new Range(min_p, max_p));
-//		pValRangeParam.getEditor().refreshParamEditor();
-//		pValNumParam.getEditor().refreshParamEditor();
-//		pValNumParam.getEditor().setEnabled(true);
-//		pValRangeParam.getEditor().setEnabled(true);
-//
-//		cValRangeParam.setValue(new Range(round(new_c / Math.sqrt(max_c/min_c),6), round(new_c * Math.sqrt(max_c/min_c),6)));
-//		cValRangeParam.getEditor().refreshParamEditor();
-//		cValNumParam.getEditor().refreshParamEditor();
-//		cValNumParam.getEditor().setEnabled(true);
-//		cValRangeParam.getEditor().setEnabled(true);
+		// watch out for p<0
+		double minp = genericParams.get_p()-4*genericParams.get_pSigma();
+		pValRangeParam.setValue(new Range(Math.max(0.1, round(minp,2)),
+				round(genericParams.get_p()+4*genericParams.get_pSigma(),2)));
+
+		// watch out for c < 1e-5 (seismic catalog resolution of one second = 1.15e-5 days)
+		double minc = genericParams.get_c()/Math.pow(10, 4*genericParams.get_logcSigma());
+		cValRangeParam.setValue(new Range(Math.max(1e-5, round(minc,sigDigits)),
+				Math.min(1, round(genericParams.get_c()*Math.pow(10, 4*genericParams.get_logcSigma()),sigDigits))));
 		
+		magRefParam.setValue(round(genericParams.get_refMag(),2));
+//		bParam.setValue(round(genericParams.get_b(),2));
 		
+		//		
+		if(!commandLine) {
+			bParam.getEditor().refreshParamEditor();
+			magRefParam.getEditor().refreshParamEditor();
+			amsValRangeParam.getEditor().refreshParamEditor();
+			aValRangeParam.getEditor().refreshParamEditor();
+			pValRangeParam.getEditor().refreshParamEditor();
+			cValRangeParam.getEditor().refreshParamEditor();
+		}
+			
 		// checks ranges and updates the num parameter based on the range
-		updateRangeParams(amsValRangeParam, amsValNumParam, 51);
-		updateRangeParams(aValRangeParam, aValNumParam, 51);
-		updateRangeParams(pValRangeParam, pValNumParam, 51);
-		updateRangeParams(cValRangeParam, cValNumParam, 51);
+		updateRangeNumParams(amsValRangeParam, amsValNumParam, 51);
+		updateRangeNumParams(aValRangeParam, aValNumParam, 51);
+		updateRangeNumParams(pValRangeParam, pValNumParam, 51);
+		updateRangeNumParams(cValRangeParam, cValNumParam, 51);
 		
 		//clear the sequence specific and Bayesian fits
 		if (D) System.out.println("Resetting model");
+		
 		if (bayesianModel != null) bayesianModel = null;
+		
 		amsValParam.setValue(null);
 		amsValParam.getEditor().refreshParamEditor();
 		aValParam.setValue(null);
@@ -6633,6 +7048,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		pValParam.getEditor().refreshParamEditor();
 		cValParam.setValue(null);
 		cValParam.getEditor().refreshParamEditor();
+		
 		if (D) System.out.println("Done resetting model");
 	}
 	
@@ -6660,28 +7076,8 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		// need to remove forecast from cumulativeNumber plot
 	}
 	
-	private void updateParameterGenericRanges() {
-		amsValRangeParam.setValue(new Range(round(genericParams.get_a()-3*genericParams.get_aSigma(),2), round(genericParams.get_a()+3*genericParams.get_aSigma(),2)));
-		aValRangeParam.setValue(new Range(round(genericParams.get_a()-3*genericParams.get_aSigma(),2), round(genericParams.get_a()+3*genericParams.get_aSigma(),2)));
-
-		// watch out for p<0
-		double minp = genericParams.get_p()-3*genericParams.get_pSigma();
-		pValRangeParam.setValue(new Range(Math.max(0.1, round(minp,2)), round(genericParams.get_p()+3*genericParams.get_pSigma(),2)));
-
-		// watch out for c < 1e-5
-		double minc = genericParams.get_c()/Math.pow(10, 3*genericParams.get_logcSigma());
-		cValRangeParam.setValue(new Range(Math.min(1e-5, round(minc,sigDigits)),
-				Math.min(1, round(genericParams.get_c()*Math.pow(10, 3*genericParams.get_logcSigma()),sigDigits))));
-
-		bParam.setValue(round(genericParams.get_b(),2));
-		//	if(!commandLine)
-		bParam.getEditor().refreshParamEditor();
-
-		magRefParam.setValue(round(genericParams.get_refMag(),2));
-		magRefParam.getEditor().refreshParamEditor();
-	}
 	
-	private void updateRangeParams(RangeParameter rangeParam, IntegerParameter numParam, int defaultNum) {
+	private void updateRangeNumParams(RangeParameter rangeParam, IntegerParameter numParam, int defaultNum) {
 		Preconditions.checkState(defaultNum > 1);
 		Range range = rangeParam.getValue();
 		if (range == null)
@@ -6845,6 +7241,13 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	private static void validateParameter(Double value, String name) {
 		Preconditions.checkState(value != null, "Must specify "+name);
 		Preconditions.checkState(Doubles.isFinite(value), name+" must be finite: %s", value);
+	}
+	
+	public double getProductivityMag(){
+		if(fitMSProductivityParam.getValue())
+			return mainshock.getMag() + bayesianModel.getMaxLikelihood_ams() - genericModel.getMaxLikelihood_ams();
+		else
+			return mainshock.getMag();
 	}
 
 	private Location getCentroid() {
@@ -7041,6 +7444,48 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 	}
 	
 	
+//	private void saveConfigFile() {
+//		//save the variables
+//	
+//		StringBuilder jsonString = new StringBuilder();
+//
+//		jsonString.append("{bFixed," + bFixed +"},");
+//		
+//		
+//		
+//		
+//		String filename = new String(workingDir + "/configuration.txt");
+//		File file = new File(filename);
+//		try {
+//			FileWriter fw = null;
+//			try {
+//				workingDir = file.getParentFile();
+//
+//				fw = new FileWriter(file);
+//				fw.write(jsonString.toString());
+//				
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//				JOptionPane.showMessageDialog(this, e.getMessage(),
+//						"Error Saving Configuration File", JOptionPane.ERROR_MESSAGE);
+//				throw e;
+//			} finally {
+//				if (fw != null) {
+//					try {
+//						fw.close();
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//						throw e;
+//					}
+//				}
+//			}
+//			
+//		} catch (IOException e) {
+//			ExceptionUtils.throwAsRuntimeException(e);
+//		}
+//	}
+	
+	
 	private List<String> tipText;
 	private void printTip(int step){
 		
@@ -7050,10 +7495,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		
 		SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy");
 		formatter.setTimeZone(utc); //utc=TimeZone.getTimeZone("UTC"));
-//		double elapsedDays = (double) (System.currentTimeMillis() - expirationDate.getTimeInMillis())/ETAS_StatsCalc.MILLISEC_PER_DAY;
-		
-//		String welcomeMessage = "This a Beta version of the Aftershock Forecaster software. Get the latest version from www.caltech.edu/~nvandere/AftershockForecaster.\n"
-//				+ "The Beta version will expire " + formatter.format(expirationDate.getTime()) + String.format(" (%d days remaining).", (int) -elapsedDays);
 		String welcomeMessage =   "----------------------------------------------------------------------------------------\n"
 								+ "   This software is designed to streamline the analysis of aftershock sequences and the\n"
 								+ "   generation of aftershock forecasts using an Epidemic-Type Aftershock Sequence model.\n"
@@ -7078,105 +7519,6 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		if (tipsOn) System.out.println(tipText.get(step));
 	}
 	
-	// writeForecast is no longer used. Publish the forecast through the GraphicalForecast object
-	
-//	private void writeForecast() {
-//		// save the forecast to file
-//		// this was used for the puerto rico retrospective paper, and isnt used for production
-//		double[] predictionMagnitudes = new double[]{3,4,5,6,7,8,9};
-//		double[] predictionIntervals = new double[]{1,7,31,365}; //day,week,month,year
-//
-//		double[][][]	number = new double[predictionMagnitudes.length][predictionIntervals.length][3];
-//		double[][]	probability = new double[predictionMagnitudes.length][predictionIntervals.length];
-//		double[][] observedNumber = new double[predictionMagnitudes.length][predictionIntervals.length];
-//		double[][] observedFractileBayesian = new double[predictionMagnitudes.length][predictionIntervals.length];
-//		double[][] observedFractileGeneric = new double[predictionMagnitudes.length][predictionIntervals.length];
-//		double tMinDays = forecastStartTimeParam.getValue();
-//		double[] calcFractiles = new double[]{0.5,0.025,0.975};
-//		double[] fractiles = new double[3];
-//		double tMaxDays;
-//		
-//		StringBuffer outputString = new StringBuffer();
-//		
-//		for (int i = 0; i < predictionMagnitudes.length; i++){
-//			for (int j = 0; j < predictionIntervals.length; j++){
-//				tMaxDays = tMinDays + predictionIntervals[j];
-//				
-//				fractiles = bayesianModel.getCumNumFractileWithAleatory(calcFractiles, predictionMagnitudes[i], tMinDays, tMaxDays);
-//				number[i][j][0] = fractiles[0];
-//				number[i][j][1] = fractiles[1];
-//				number[i][j][2] = fractiles[2];
-//				probability[i][j] = bayesianModel.getProbabilityWithAleatory(predictionMagnitudes[i], tMinDays, tMaxDays);
-//				
-//				
-//				if (validate && predictionMagnitudes[i] >= mcParam.getValue()) {
-//					observedNumber[i][j] = observedAftershocks.getRupsAboveMag(predictionMagnitudes[i]).getRupsAfter(mainshock.getOriginTime())
-//							.getRupsBefore(mainshock.getOriginTime() + (long)(tMaxDays*ETAS_StatsCalc.MILLISEC_PER_DAY)).size();
-//					observedFractileBayesian[i][j] = bayesianModel.getCumulativeQuantileValue(tMinDays, tMaxDays, predictionMagnitudes[i], (int) observedNumber[i][j]);
-//
-//					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractileBayesian[i][j]));
-//				} else {
-//					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[-] \t%5.4f \t[-]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], probability[i][j]));
-//				}
-//			}
-//		}
-//
-//		for (int i = 0; i < predictionMagnitudes.length; i++){
-//			for (int j = 0; j < predictionIntervals.length; j++){
-//				tMaxDays = tMinDays + predictionIntervals[j];
-//
-//				fractiles = genericModel.getCumNumFractileWithAleatory(calcFractiles, predictionMagnitudes[i], tMinDays, tMaxDays);
-//				number[i][j][0] = fractiles[0];
-//				number[i][j][1] = fractiles[1];
-//				number[i][j][2] = fractiles[2];
-//				probability[i][j] = genericModel.getProbabilityWithAleatory(predictionMagnitudes[i], tMinDays, tMaxDays);
-//
-//				if (validate && predictionMagnitudes[i] >= mcParam.getValue()) {
-//					observedFractileGeneric[i][j] = genericModel.getCumulativeQuantileValue(tMinDays, tMaxDays, predictionMagnitudes[i], (int) observedNumber[i][j]);
-//
-//					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[%.0f] \t%5.4f \t[%5.4f]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], observedNumber[i][j], probability[i][j], observedFractileGeneric[i][j]));
-//				} else {
-//					outputString.append(String.format("%3.1f \t%3.0f \t%.0f \t(%.0f - %.0f) \t[-] \t%5.4f \t[-]\n", predictionMagnitudes[i], predictionIntervals[j], number[i][j][0], number[i][j][1], number[i][j][2], probability[i][j]));
-//				}
-//			}
-//		}
-//		
-////		String headerString = "";
-//		
-//		StringBuffer optionString = new StringBuffer();
-//		if (validate)
-//			optionString.append("_validate");
-//		if (rjMode)
-//			optionString.append("_rj");	
-//		
-//		GregorianCalendar mainshockTime = mainshock.getOriginTimeCal();
-//		GregorianCalendar forecastStart = mainshock.getOriginTimeCal();
-//		forecastStart.setTimeInMillis((long)(mainshock.getOriginTime() + forecastStartTimeParam.getValue()*ETAS_StatsCalc.MILLISEC_PER_DAY ));
-//	
-//		GraphicalForecast newGraph = new GraphicalForecast(null, bayesianModel,  mainshockTime, forecastStart, 4, region);
-//		newGraph.constructForecast();
-//		
-//		if (rjMode) {
-//			File outFileJson = new File(workingDir + "/PRForecasts/" + eventID + "_t" + String.format("%2.1f", dataEndTimeParam.getValue()) + optionString + "_bayesian.json");
-////			newGraph.writeSummaryJsonNexp( outFileJson,  bayesianModel,  mainshockTime, forecastStart, observedNumber, observedFractileBayesian);
-//			newGraph.writeSummaryJson( outFileJson,  bayesianModel,  mainshockTime, forecastStart);
-//		} else {
-//			File outFileJson = new File(workingDir + "/PRForecasts/" + eventID + "_t" + String.format("%2.1f", dataEndTimeParam.getValue()) + optionString + "_bayesian.json");
-////			newGraph.writeSummaryJsonNexp( outFileJson,  bayesianModel,  mainshockTime, forecastStart, observedNumber, observedFractileBayesian);
-//			newGraph.writeSummaryJson( outFileJson,  bayesianModel,  mainshockTime, forecastStart);
-//			
-//
-//			newGraph = new GraphicalForecast(null, genericModel,  mainshockTime, forecastStart, 4, region);
-//			newGraph.constructForecast();
-//			outFileJson = new File(workingDir + "/PRForecasts/" + eventID + "_t" + String.format("%2.1f", dataEndTimeParam.getValue()) + optionString + "_generic.json");
-////			newGraph.writeSummaryJsonNexp( outFileJson,  genericModel,  mainshockTime, forecastStart, observedNumber, observedFractileGeneric);
-//			newGraph.writeSummaryJson( outFileJson,  genericModel,  mainshockTime, forecastStart);
-//		}		
-//		
-//		System.exit(0);
-//	}
-//	
-	
 	private void checkArguments(String... args){
 		//set defaults
 		rjMode = false;
@@ -7190,6 +7532,7 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 		mcFixed = false;
 		dataStartFixed = false;
 		catalogFileGiven = false;
+		aftershockRadiusGiven = false;
 
 		//check for arguments
 		for(int i = 0; i < args.length; i++) {
@@ -7235,11 +7578,23 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 				catalogFileName = args[i];
 				catalogFileGiven = true;
 			}
+			if (argument.contentEquals("-config")) {
+				i++;
+				configurationFileName = args[i];
+				configurationFileGiven = true;
+			}
 			if (argument.contentEquals("-dataStart")) {
 				i++;
 				dataStartFixedValue = Double.parseDouble(args[i]);
 				dataStartFixed = true;
 			}
+			if (argument.contentEquals("-aftershockRadius")) {
+				i++;
+				aftershockRadiusFixedValue = Double.parseDouble(args[i]);
+				aftershockRadiusGiven = true;
+				
+			}
+			
 		}
 	}
 

@@ -254,10 +254,8 @@ public class ETAScatalog {
 			event[2] = 0;	//generation number
 			
 			//check whether event is prior to forecast start, and larger than Mc
-//			if( event[0] <= forecastStart && event[0] >= 0 && event[1] >= Mc){
-			if( event[0] <= forecastStart && event[0] >= 0 && event[1] >= minMagLimit){
-				//System.out.println("Seed "+counter++);
-				//newEqList.add(event); 
+//			if( event[0] <= forecastStart && event[0] >= 0 && event[1] >= minMagLimit){
+			if( event[0] <= forecastStart && event[1] >= minMagLimit){ //2026-06-30 NVDE -- will this allow foreshocks?
 
 				//add children
 				newEqList = getChildren(newEqList, event[0], event[1], (int)event[2], a_sample, p_sample, c_sample, simNumber);

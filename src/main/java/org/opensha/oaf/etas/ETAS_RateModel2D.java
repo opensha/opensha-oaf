@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import org.opensha.commons.data.xyz.GriddedGeoDataSet;
 import org.opensha.commons.geo.GriddedRegion;
 import org.opensha.commons.geo.Location;
+import org.opensha.commons.param.impl.DoubleParameter;
+import org.opensha.commons.param.impl.EnumParameter;
 import org.opensha.commons.util.cpt.CPT;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -65,7 +67,7 @@ public class ETAS_RateModel2D {
 		double lon0 = centerLocation.getLongitude();
 		double geomFactor = Math.cos(Math.toRadians(lat0)); //we use a single central estimate of degLon-->km mapping
 
-		// make the readius set to the largest earthquake in the catalog
+		// make the radius set to the largest earthquake in the catalog. First guess is mainshock
 		double maxMag = forecastModel.mainShock.getMag();
 
 		ObsEqkRupList largeAftershocks = forecastModel.aftershockList.getRupsAboveMag(maxMag);
@@ -110,10 +112,11 @@ public class ETAS_RateModel2D {
 
 		if(D) System.out.println("Region:" + latmin + " " + latmax + " " + lonmin + " " + lonmax + " " + griddedRegion.getNodeCount() +" "+ geomFactor);
 
-		if (fitType.equals("aftershocks") && aftershockFitList.size() >= 3){
+		if (fitType.equals("aftershocks") && aftershockFitList.size() >= 2){
 			// fit finite mainshock source to early aftershocks
 			if(D) System.out.println("Fitting " + aftershockFitList.size() + " early aftershocks, out of " + forecastModel.aftershockList.size() + " total aftershocks.");
 //			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(forecastModel.mainShock, aftershockFitList, stressDrop);
+			
 			equivalentMainshock = ETAS_StatsCalc.fitMainshockLineSource(largestShock, aftershockFitList, stressDrop);
 			
 		} else if (fitType.equals("shakemap") && faultTrace != null && faultTrace.size() > 1){
@@ -348,7 +351,7 @@ public class ETAS_RateModel2D {
 	private double[][] mmiModel;
 	private double maxDist = Double.POSITIVE_INFINITY;
 	
-	private double getMagForMMI(double mmiRef, double D){
+	private double getMagForMMI(double mmiRef, double dist){
 		
 		double mag;
 		if (mmiModel == null){
@@ -361,7 +364,7 @@ public class ETAS_RateModel2D {
 			for (int i = 0; i < distances.length; i++){
 				mmiModel[0][i] = distances[i]; 
 				
-				D = distances[i];
+				dist = distances[i];
 
 				// this one uses Atkinson and Wald 2007, not corrected for sigma
 				String loc = "notCEUS";
@@ -379,7 +382,7 @@ public class ETAS_RateModel2D {
 					Rt = 30.0;
 				}
 
-				double R = Math.sqrt(D*D + h*h);
+				double R = Math.sqrt(dist*dist + h*h);
 				double B;
 				if (R < Rt)
 					B = 0.0;
@@ -396,8 +399,8 @@ public class ETAS_RateModel2D {
 					// it can never happen
 					mag = Double.POSITIVE_INFINITY;
 					// update the maxDist -- the distance beyond which it can never happen
-					if(D < maxDist)
-						maxDist = D;
+					if(dist < maxDist)
+						maxDist = dist;
 				}
 				
 				mmiModel[1][i] = mag;
@@ -405,11 +408,11 @@ public class ETAS_RateModel2D {
 		}
 		
 //		return mmiModel.getInterpolatedY_inLogXLogYDomain(D);
-		if(D >= maxDist)
+		if(dist >= maxDist)
 			return Double.POSITIVE_INFINITY;
 		else{
 			int pt = mmiModel[0].length-1;
-			while ( D < mmiModel[0][pt] && pt > 0){
+			while ( dist < mmiModel[0][pt] && pt > 0){
 				pt--;
 			}
 			return mmiModel[1][pt];
@@ -517,6 +520,7 @@ public class ETAS_RateModel2D {
 	
 	public static List<PolyLine> getContours(GriddedGeoDataSet gridData, int nc){
 		double[] contourLevels = ETAS_StatsCalc.linspace(0,gridData.getMaxZ(),nc);
+		System.out.println(contourLevels.length + " contour levels");
 		return getContours(gridData, contourLevels);
 	}
 	
@@ -529,6 +533,8 @@ public class ETAS_RateModel2D {
 		double lat;
 		double z;
 
+		// TODO header
+		
 		for (int i = 0; i < gridData.size(); i++){
 			lat = gridData.getLocation(i).getLatitude();
 			lon = gridData.getLocation(i).getLongitude();
@@ -536,7 +542,7 @@ public class ETAS_RateModel2D {
 		
 			// build output string
 			outputString.append(lat + ", " + lon + ", " + z + "\n");
-			if (D) System.out.println(lat + ", " + lon + ", " + z + "\n");
+//			if (D) System.out.println(lat + ", " + lon + ", " + z);
 		}
 		String longString = outputString.toString();
 		
@@ -567,6 +573,172 @@ public class ETAS_RateModel2D {
 		}		
 	}
 	
+	
+	
+	private enum ForecastDuration {
+		
+		YEAR("Year",366d),
+		MONTH("Month",31d),
+		WEEK("Week", 7d),
+		DAY("Day",1d);
+		
+		private double duration;
+		private String name;
+		
+		private ForecastDuration(String name, double duration) {
+			this.duration = duration;
+			this.name = name;
+		}
+		
+		public double getValueNumeric() {
+			return duration;
+		}
+		
+		@Override
+		public String toString() {
+			return name;
+		}
+	}
+	
+	// Writes a json with all the shaking information. will move from ETAS_RateModel2D.
+	// needs to process gmpeProbModels at many levels/output the full data. The current
+	// version just prints a list of gmpeProbModels to a json structure. The list builder 
+	// can be separate. 
+	public void writeGriddedDataAsJson(
+			ObsEqkRupture mainshock, String dateStart,  
+			Double forecastStartTime, Double forecastEndTime, Double mapGridSpacing,
+			String mapType, String intensityType, Double mapLevel, Double mapPOE,
+			List<GriddedGeoDataSet> gmpeProbModelList, File outFile)
+					throws IOException {
+
+
+		File mapJsonFile = new File(outFile.getParent() + "/" + "shaking" + ".json");
+		System.out.println("Saving shaking grid to: " + mapJsonFile);
+
+		FileWriter fw = null;
+		fw = new FileWriter(mapJsonFile);
+		try {
+			
+			
+			if(gmpeProbModelList != null) {
+				
+				long creationTimeMillis = System.currentTimeMillis();
+
+				String jsonHeader = "{"
+						+ "\"mainshock\":{"
+						+ "\n\t\"eventID\": \"" + mainshock.getEventId() + "\""
+						+ ",\n\t \"originTimeUTC\": \"" + dateStart +"\""
+						+ ",\n\t \"originTime\": " + mainshock.getOriginTime()
+						+ ",\n\t \"forecastStartDaysFromOrigin\": " + forecastStartTime
+						+ ",\n\t \"creationTime\": " + creationTimeMillis
+						+ ",\n\t \"mapSpacingKM\": " + mapGridSpacing
+						+ ",\n\t \"source\": \"United States Geological Survey AftershockForecaster and US State Department Bureau for DHR\""
+						+ ",\n\t \"disclaimer\": \"This probabilistic forecast is based on statistical models of past aftershock sequences "
+						+ "combined with statistical models of past ground motions and impacts. Each aftershock sequence "
+						+ "is unique. These numbers have high uncertainty. This information is provided " 
+						+ "for response situational awareness and should not be the sole source informing life safety, engineering, "
+						+ "or design decisions. This forecast is subject to rapid change and revision, make sure your information "
+						+ "is up to date.\""
+						+ "},";
+				if(D)System.out.println(jsonHeader);
+						
+				int nmap = 0;
+				for (GriddedGeoDataSet gmpeMap : gmpeProbModelList){
+					ForecastDuration foreDur = ForecastDuration.values()[nmap++];
+					
+					String mapLayerHeader = "";
+					if (nmap == 1)
+							mapLayerHeader += "\n\"aftershockShakingForecast\":[";
+					
+					mapLayerHeader += "\n\t{\"meta\": {"
+							+ "\n\t  \"forecastDuration\": \"" + foreDur.toString() + "\""
+							+ ",\n\t \"forecastEndDaysFromOrigin\": " + (forecastStartTime + foreDur.duration)
+							+ ",\n\t \"mapType\": \"" + mapType + "\""
+							+ ",\n\t \"intensityType\": \"" + intensityType + "\""
+							+ ",\n\t \"ExceedanceLevelValue\": " + ("Probabilities".equals(mapType) ? mapLevel : "\"null\"")
+							+ ",\n\t \"ProbabilityOfExeedance\": " + ("Levels".equals(mapType) ? mapPOE : "\"null\"" )
+							+ "},\n";
+					
+					
+					//add bounding box?
+					if(D)System.out.println(mapLayerHeader);
+					try {
+						if (gmpeMap != null) {
+							if (nmap - 1 == 0) //first run, create new file
+								this.writeGriddedDataAsJson(gmpeMap, jsonHeader + mapLayerHeader, fw, false);
+							else
+								this.appendGriddedDataAsJson(gmpeMap, mapLayerHeader, fw);
+
+							
+							if (nmap < gmpeProbModelList.size())
+								fw.append("},");
+							else
+								fw.append("}]}");
+							
+						} else {
+							System.out.println("No shaking model found for duration: "  + foreDur);
+						}	
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						System.out.println("Unable to save shaking grid. Shaking data may not exist.");
+						e.printStackTrace();
+						throw e;
+					} 
+					
+					
+				}
+			} 
+		}
+		finally {
+			if (fw != null) {
+				try {
+					fw.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					throw e;
+				}
+			}
+		}
+
+	}
+
+	public void writeGriddedDataAsJson(GriddedGeoDataSet gridData, String header, FileWriter fw, boolean append) throws IOException  {
+		StringBuilder outputString = new StringBuilder();
+
+		double lon;
+		double lat;
+		double z;
+
+		String headerString = header + "\"data_LatLonValue\": [";
+		
+		for (int i = 0; i < gridData.size(); i++){
+			lat = gridData.getLocation(i).getLatitude();
+			lon = gridData.getLocation(i).getLongitude();
+			z = gridData.get(i);
+		
+			// build output string
+			outputString.append("[" + lat + ", " + lon + ", " + z + "]");
+			if (i < gridData.size() - 1) outputString.append(", ");  
+		}
+		
+		outputString.append("]");
+
+		String longString = outputString.toString();
+		try {
+			fw.append(headerString);
+			fw.append(longString);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw e;
+		} 		
+	}
+	
+	
+	public void appendGriddedDataAsJson(GriddedGeoDataSet gridData, String header, FileWriter file) throws IOException  {
+		writeGriddedDataAsJson( gridData,  header,  file, true);
+	}
+
 	public static List<PolyLine> getContours(GriddedGeoDataSet gridData, double[] contourLevels){
 		double spacing = gridData.getRegion().getSpacing();
 		
@@ -613,6 +785,10 @@ public class ETAS_RateModel2D {
 
 		double undefData = 0d;
 		int nc = contourLevels.length;
+		boolean D = true;
+		if (D)
+			System.out.println(S0.toString() + " " + X.toString());
+		
 		List<Border> borders = Contour.tracingBorders(S0, X, Y, S1, undefData);
 		List<PolyLine> cntr = Contour.tracingContourLines(S0, X, Y, nc, contourLevels, undefData, borders, S1);
 		
