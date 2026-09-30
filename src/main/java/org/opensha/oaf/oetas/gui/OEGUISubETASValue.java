@@ -185,6 +185,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private static final int PARMGRP_ETAS_MODEL = 812;			// Option to select model
 	private static final int PARMGRP_ETAS_PRIOR = 813;			// Option to select prior
 	private static final int PARMGRP_USE_COMMON_B = 814;		// Option to use common b-value (same as RJ)
+	private static final int PARMGRP_ETAS_CHECK_GRID = 815;		// ETAS check grid size button
 
 
 
@@ -283,7 +284,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 	// Update the default ranges from ETAS parameters.
 	// Use defaults if etas_params is null or ranges are not available.
 
-	private void update_default_ranges (OEtasParameters etas_params) {
+	private void update_default_ranges (OEtasParameters etas_params, double common_b_value) {
 
 		if (!( etas_params != null && etas_params.range_avail && !(etas_params.eligible_params_avail && etas_params.eligible_option == OEConstants.ELIGIBLE_OPT_DISABLE) )) {
 			init_default_ranges();
@@ -341,6 +342,9 @@ public class OEGUISubETASValue extends OEGUIListener {
 		OEDiscreteRange def_b_range = etas_params.b_range;
 		def_f_use_common_b = false;
 		def_b_value = def_b_range.get_range_middle();
+		if (Math.abs (def_b_value - common_b_value) <= 0.001) {
+			def_f_use_common_b = true;
+		}
 
 		return;
 	}
@@ -669,6 +673,18 @@ public class OEGUISubETASValue extends OEGUIListener {
 	}
 
 
+	// Check Grid Size button.
+
+	private ButtonParameter checkGridSizeButton;
+
+	private ButtonParameter init_checkGridSizeButton () throws GUIEDTException {
+		checkGridSizeButton = new ButtonParameter("Check Grid Size", "Check Grid Size...");
+		checkGridSizeButton.setInfo("Check if the ETAS parameter search grid is OK or too large");
+		register_param (checkGridSizeButton, "checkGridSizeButton", PARMGRP_ETAS_CHECK_GRID);
+		return checkGridSizeButton;
+	}
+
+
 
 
 	// ETAS model; dropdown containing an enumeration to select ETAS enable option.
@@ -792,6 +808,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 		
 		init_zmuETASValNumParam();
 
+		init_checkGridSizeButton();
+
 		init_etasModelParam();
 
 		init_etasBayWeightParam();
@@ -824,7 +842,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		boolean f_button_row = false;
 
 		etasValueEditParam.setListTitleText ("ETAS Parameters");
-		etasValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(12, f_button_row, 0));
+		etasValueEditParam.setDialogDimensions (gui_top.get_dialog_dims(13, f_button_row, 0));
 
 		etasValueList.addParameter(nETASValRangeParam);
 		etasValueList.addParameter(nETASValNumParam);
@@ -838,6 +856,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		etasValueList.addParameter(zamsETASValRelativeParam);
 		etasValueList.addParameter(zmuETASValRangeParam);
 		etasValueList.addParameter(zmuETASValNumParam);
+		etasValueList.addParameter(checkGridSizeButton);
 		
 		etasValueEditParam.getEditor().refreshParamEditor();
 	}
@@ -846,7 +865,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private GUIParameterListParameter init_etasValueEditParam () throws GUIEDTException {
 		etasValueList = new ParameterList();
 		etasValueEditParam = new GUIParameterListParameter("ETAS Parameters", etasValueList, "Edit ETAS Params...",
-							"Edit ETAS Params", "ETAS Parameters", null, null, false, gui_top.get_trace_events());
+							"Edit ETAS Params", "ETAS Parameters", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_param_etas_param.html"));
 		etasValueEditParam.setInfo("Set ETAS parameter values");
 		register_param (etasValueEditParam, "etasValueEditParam", PARMGRP_ETAS_EDIT);
 
@@ -893,7 +913,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 	private GUIParameterListParameter init_etasOptionEditParam () throws GUIEDTException {
 		etasOptionList = new ParameterList();
 		etasOptionEditParam = new GUIParameterListParameter("ETAS Options", etasOptionList, "Edit ETAS Options...",
-							"Edit ETAS Options", "ETAS Options", null, null, false, gui_top.get_trace_events());
+							"Edit ETAS Options", "ETAS Options", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_param_etas_opt.html"));
 		etasOptionEditParam.setInfo("Set ETAS options");
 		register_param (etasOptionEditParam, "etasOptionEditParam", PARMGRP_ETAS_OPTION);
 
@@ -937,6 +958,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		enableDefaultParam(zamsETASValRelativeParam, f_etas_value_enable, true);
 		enableDefaultParam(zmuETASValRangeParam, f_etas_value_enable, null);
 		enableDefaultParam(zmuETASValNumParam, f_etas_value_enable, null);
+		enableParam(checkGridSizeButton, f_etas_value_enable);
 
 		enableDefaultParam(useCommonBParam, f_etas_value_enable, true);
 		boolean f_use_common_b = validParam(useCommonBParam);
@@ -1316,9 +1338,8 @@ public class OEGUISubETASValue extends OEGUIListener {
 		init_etasValueEditParam();
 		init_etasOptionEditParam();
 
-		// Set initial enable state
+		// Set default values and initial enable state
 
-		adjust_enable();
 		update_etas_value_from_defaults();
 	}
 
@@ -1380,7 +1401,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 		OEtasParameters etas_params = gui_model.get_etasParams();
 		//OEtasParameters etas_params = gui_model.get_or_make_etasParams().params;
 
-		update_default_ranges (etas_params);
+		update_default_ranges (etas_params, gui_model.get_cat_bParam());
 		update_default_model (etas_params);
 		update_default_prior (etas_params);
 		update_default_etas_enable (etas_params);
@@ -1392,6 +1413,7 @@ public class OEGUISubETASValue extends OEGUIListener {
 
 
 	// Update ETAS values from the defaults.
+	// Also update the enable state.
 
 	private void update_etas_value_from_defaults () throws GUIEDTException {
 		updateParam(etasEnableParam, def_etas_enable);
@@ -1428,6 +1450,10 @@ public class OEGUISubETASValue extends OEGUIListener {
 			updateParam(etasBayWeightParam, def_bay_weight);
 		}
 		updateParam(etasPriorParam, def_etas_prior);
+
+		// Uodate data-dependent enable
+
+		adjust_enable();
 
 		return;
 	}
@@ -1646,6 +1672,57 @@ public class OEGUISubETASValue extends OEGUIListener {
 				return;
 			}
 			report_etas_value_change();
+		}
+		break;
+
+
+
+
+		// Button to check grid size.
+		// - Pop up a dialog box to display size.
+
+		case PARMGRP_ETAS_CHECK_GRID: {
+			if (!( f_sub_enable && f_etas_value_enable )) {
+				return;
+			}
+
+			// Show a dialog with grid size information
+
+			long grid_size = 1L;
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(nETASValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(pETASValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(cETASValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(zamsETASValNumParam));
+			}
+			if (grid_size <= 1000000000L) {
+				grid_size *= (long)(validParam(zmuETASValNumParam));
+			}
+
+			long max_grid_size = 5000000L;
+			int message_type = JOptionPane.INFORMATION_MESSAGE;
+
+			StringBuilder sb = new StringBuilder();			
+			if (grid_size <= 1000000000L) {
+				sb.append ("Current ETAS grid size = " + grid_size + "\n\n");
+			} else {
+				sb.append ("Current ETAS grid size = " + "more than 1000000000" + "\n\n");
+			}
+			sb.append ("Maximum allowed ETAS grid size = " + max_grid_size + "\n\n");
+			if (grid_size <= max_grid_size) {
+				sb.append ("Grid size is OK.");
+			} else {
+				sb.append ("Grid size is too large.");
+				message_type = JOptionPane.ERROR_MESSAGE;
+			}
+
+			JOptionPane.showMessageDialog(gui_top.get_top_window(), sb.toString(), "ETAS Grid Size", message_type);
 		}
 		break;
 

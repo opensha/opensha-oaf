@@ -28,6 +28,7 @@ import org.opensha.oaf.rj.MagCompFn;
 
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
+import org.opensha.commons.geo.Location;
 
 import org.opensha.oaf.util.MarshalImpArray;
 import org.opensha.oaf.util.MarshalImpJsonReader;
@@ -811,7 +812,7 @@ public class ServerTest {
 			double max_c=0.05;
 			int num_c=1;
 
-			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, null, magMain);
+			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, new Location (0.0, 0.0, 0.0), magMain);
 
 			CompactEqkRupList rupture_list_out = entry_out.get_rupture_list();
 

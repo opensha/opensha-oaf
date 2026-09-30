@@ -48,3 +48,11 @@ separation_km = 38.889
 separation_days = -1.804
 seq_end_time_abs = 1072473964100 (2003-12-26 21:26:04 UTC)
 seq_end_time_rel_days = 1.030
+seq_end_rupture = ObsEqkRupture:
+rup_event_id = usp000cg55
+rup_time = 1072473964100 (2003-12-26 21:26:04 UTC)
+rup_mag = 6.8
+rup_lat = -22.273
+rup_lon = 169.314
+rup_depth = 10.0
+

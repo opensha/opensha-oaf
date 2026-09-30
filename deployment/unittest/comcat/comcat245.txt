@@ -9,15 +9,17 @@ rup_mag = 8.8
 rup_lat = -36.122
 rup_lon = -72.898
 rup_depth = 22.9
-description = 36 km WNW of Quirihue, Chile
+description = 2010 Maule, Chile Earthquake
 ids = ,usp000h7rf,us2010tfan,official20100227063411530_30,choy20100227063411,gcmtc201002270634a,duputel201002270634a,gcmt20100227063415,atlas20100227063414,iscgem14340585,
 net = official
 code = 20100227063411530_30
+magtype = mww
 
 http_status = 200
 EI Map: code = 20100227063411530_30
-EI Map: description = 36 km WNW of Quirihue, Chile
+EI Map: description = 2010 Maule, Chile Earthquake
 EI Map: ids = ,usp000h7rf,us2010tfan,official20100227063411530_30,choy20100227063411,gcmtc201002270634a,duputel201002270634a,gcmt20100227063415,atlas20100227063414,iscgem14340585,
+EI Map: magtype = mww
 EI Map: net = official
 ID List: official20100227063411530_30
 ID List: usp000h7rf

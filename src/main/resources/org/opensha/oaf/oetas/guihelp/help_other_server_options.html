@@ -1,0 +1,92 @@
+<html>
+    <head>
+        <title>Options Sent to the Servers</title>
+    </head>
+    <body>
+        <h2>Options Sent to the Servers</h2>
+        <p>
+            You can use the <b>Analyst Parameters</b> panel to send options to the AAFS servers.
+            The servers remember the options you set, and use them in all future forecasts.
+            Options apply only to the mainshock that you are currently working with.
+        </p>
+        <p>
+            When you send options to the servers, you can choose to send just basic options,
+            or you can choose to send both basic options and custom parameters.
+            You use the <b>Use custom parameters</b> checkbox in the <b>Analyst Parameters</b> panel
+            to select whether or not you want to send custom parameters.
+        </p>
+        <p>
+            Before sending basic options, you need to load data into the GUI;
+            it is sufficient to load just the mainshock.
+            However, before sending custom parameters you must not only load data into the GUI,
+            but also fit forecast parameters.
+        </p>
+        <p>
+            The <b>Analyst Parameters</b> panel has the ability to save options to a file
+            instead of sending them directly to the AAFS servers.
+            You can examine the file to see what options would be sent,
+            and you can use the <b>File Operations</b> panel to send the options in the file to the servers.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Basic Options</b></p>
+        <p>
+            All basic options are located in the <b>Analyst Parameters</b> panel.
+            They are:
+        </p>
+        <ul>
+            <li>
+                Automatic forecast option (normal, enable, or disable).<br>&nbsp;
+            </li>
+            <li>
+                Forecast duration (how long the automatic system issues forecasts).<br>&nbsp;
+            </li>
+            <li>
+                Injectable text.<br>&nbsp;
+            </li>
+            <li>
+                Analyst remark.<br>&nbsp;
+            </li>
+            <li>
+                Event-sequence option (auto, update, ignore, or delete) and lookback time.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Custom Parameters</b></p>
+        <p>
+            If you send custom parameters then, in addition to the basic options,
+            the following additional parameters are sent to the servers:
+        </p>
+        <ul>
+            <li>
+                Aftershock search region (from the <b>Edit Data Source</b> panel, or from a loaded catalog file).<br>&nbsp;
+            </li>
+            <li>
+                Magnitude of completeness parameters (from the <b>Common Parameters</b> panel).<br>&nbsp;
+            </li>
+            <li>
+                RJ b-value parameter (from the <b>Common Parameters</b> panel).<br>&nbsp;
+            </li>
+            <li>
+                Start and end inset times (from the <b>Common Parameters</b> panel).<br>&nbsp;
+            </li>
+            <li>
+                Forecast magnitude bins (from the <b>Common Parameters</b> panel).<br>&nbsp;
+            </li>
+            <li>
+                RJ parameter search grid (from the <b>RJ Parameters</b> panel).<br>&nbsp;
+            </li>
+            <li>
+                ETAS parameter search grid (from the <b>ETAS Parameters</b> panel).<br>&nbsp;
+            </li>
+            <li>
+                ETAS model (auto, generic, sequence-specific, Bayesian, or custom) (from the <b>ETAS Options</b> panel).<br>&nbsp;
+            </li>
+            <li>
+                ETAS prior (mixed/hierarchical, Gaussian, or uniform) (from the <b>ETAS Options</b> panel).<br>&nbsp;
+            </li>
+            <li>
+                ETAS b-value and alpha (from the <b>ETAS Options</b> panel).
+            </li>
+        </ul>
+    </body>
+</html>

@@ -157,7 +157,7 @@ pdl_key_filename =
 pdl_err_rate = 0.0
 pdl_oaf_source = us
 pdl_oaf_type = oaf
-pdl_target = 1
+pdl_target = 2
 pdl_dev_senders = [
 ]
 pdl_prod_senders = [
@@ -332,7 +332,7 @@ contentFormat = ""
   "pdl_err_rate": 0.0,
   "pdl_oaf_source": "us",
   "pdl_oaf_type": "oaf",
-  "pdl_target": 1,
+  "pdl_target": 2,
   "pdl_dev_senders": [],
   "pdl_prod_senders": [
     {"host": "prod01-pdl01.cr.usgs.gov", "port": 11235, "connectTimeout": 15000},
@@ -511,7 +511,7 @@ pdl_key_filename =
 pdl_err_rate = 0.0
 pdl_oaf_source = us
 pdl_oaf_type = oaf
-pdl_target = 1
+pdl_target = 2
 pdl_dev_senders = [
 ]
 pdl_prod_senders = [

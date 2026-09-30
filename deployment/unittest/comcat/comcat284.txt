@@ -13,11 +13,13 @@ description = 29 km ESE of Ishinomaki, Japan
 ids = ,usc0002ksa,atlas20110407143200,atlas20110407143243,usp000hzf6,choy20110407143243,duputel201104071432a,iscgem16413596,
 net = us
 code = p000hzf6
+magtype = mww
 
 http_status = 200
 EI Map: code = p000hzf6
 EI Map: description = 29 km ESE of Ishinomaki, Japan
 EI Map: ids = ,usc0002ksa,atlas20110407143200,atlas20110407143243,usp000hzf6,choy20110407143243,duputel201104071432a,iscgem16413596,
+EI Map: magtype = mww
 EI Map: net = us
 ID List: usp000hzf6
 ID List: usc0002ksa

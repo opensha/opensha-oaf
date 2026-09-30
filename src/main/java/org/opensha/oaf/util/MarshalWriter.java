@@ -396,6 +396,55 @@ public interface MarshalWriter {
 	}
 
 
+	//----- Extended type support -----
+
+	// Marshal a time.
+	// Internally, the time is a long that contains milliseconds since the epoch.
+	// Externally, it is a string in ISO-8601 format, which may include milliseconds.
+	// We use permissive rules when parsing the string (see SimpleUtils.string_to_time_permissive).
+
+	public default void marshalTime (String name, long x) {
+		//String s = SimpleUtils.time_to_parseable_string_with_millis (x);
+		String s = SimpleUtils.time_to_parseable_string (x);
+		marshalString (name, s);
+		return;
+	}
+
+	// Marshal a time array.
+
+	public default void marshalTimeArray (String name, long[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalTime (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+	// Marshal a duration.
+	// Internally, the duration is a long that contains milliseconds.
+	// Externally, it is a string in java.time.Duration format, which may include a "days" field.
+
+	public default void marshalDuration (String name, long x) {
+		String s = SimpleUtils.duration_to_string_2 (x);
+		marshalString (name, s);
+		return;
+	}
+
+	// Marshal a duration array.
+
+	public default void marshalDurationArray (String name, long[] x) {
+		int n = x.length;
+		marshalArrayBegin (name, n);
+		for (int i = 0; i < n; ++i) {
+			marshalDuration (null, x[i]);
+		}
+		marshalArrayEnd ();
+		return;
+	}
+
+
 	//----- Control functions -----
 
 	// Check write completion status.

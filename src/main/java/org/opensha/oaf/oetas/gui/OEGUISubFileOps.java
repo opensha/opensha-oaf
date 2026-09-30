@@ -310,7 +310,8 @@ public class OEGUISubFileOps extends OEGUIListener {
 	private GUIParameterListParameter init_fileOpsEditParam () throws GUIEDTException {
 		fileOpsList = new ParameterList();
 		fileOpsEditParam = new GUIParameterListParameter("File Operations", fileOpsList, "File Operations...",
-							"Perform File Operations", "File Operations", null, null, false, gui_top.get_trace_events());
+							"Perform File Operations", "File Operations", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_mtool_file_ops.html"));
 		fileOpsEditParam.setInfo("Read analyst options or forecast from a file, and send to AAFS server or to PDL");
 		register_param (fileOpsEditParam, "fileOpsEditParam", PARMGRP_FILEOPS_EDIT);
 
@@ -343,8 +344,13 @@ public class OEGUISubFileOps extends OEGUIListener {
 		enableParam(sendAnalystFileButton, f_file_ops_enable);
 		enableParam(sendForecastFileButton, f_file_ops_enable);
 
-		enableParam(evSeqOptionParam, f_file_ops_enable);
-		enableParam(evSeqLookbackParam, f_file_ops_enable);
+		if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+			enableParam(evSeqOptionParam, f_file_ops_enable);
+			enableParam(evSeqLookbackParam, f_file_ops_enable);
+		} else {
+			enableDefaultParam(evSeqOptionParam, false, null);
+			enableDefaultParam(evSeqLookbackParam, false, null);
+		}
 
 		enableParam(sendFcJsonFileButton, f_file_ops_enable);
 
@@ -423,11 +429,19 @@ public class OEGUISubFileOps extends OEGUIListener {
 
 			// Event-sequence option.
 
-			x_evSeqOptionParam = validParam(evSeqOptionParam);
+			if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+				x_evSeqOptionParam = validParam(evSeqOptionParam);
+			} else {
+				x_evSeqOptionParam = EvSeqReportOption.AUTO;
+			}
 
 			// Event-sequence lookback.
 
-			x_evSeqLookbackParam = validParam(evSeqLookbackParam);
+			if (gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params()) {
+				x_evSeqLookbackParam = validParam(evSeqLookbackParam);
+			} else {
+				x_evSeqLookbackParam = gui_model.get_config_evseq_lookback_days();
+			}
 
 			return this;
 		}
@@ -510,7 +524,12 @@ public class OEGUISubFileOps extends OEGUIListener {
 
 		// Event-sequence option and lookback
 
-		if (gui_model.get_analyst_adj_params().f_adj_evseq && gui_model.get_analyst_adj_params().evseq_cfg_params != null) {
+		if (!( gui_model.get_config_is_evseq_enabled() || gui_top.get_force_evseq_params() )) {
+
+			updateParam(evSeqOptionParam, null);
+			updateParam(evSeqLookbackParam, null);
+
+		} else if (gui_model.get_analyst_adj_params().f_adj_evseq && gui_model.get_analyst_adj_params().evseq_cfg_params != null) {
 			switch (gui_model.get_analyst_adj_params().evseq_cfg_params.get_evseq_cfg_report()) {
 			case ActionConfigFile.ESREP_NO_REPORT:
 				updateParam(evSeqOptionParam, EvSeqReportOption.IGNORE);
@@ -695,10 +714,11 @@ public class OEGUISubFileOps extends OEGUIListener {
 				@Override
 				public void run_in_edt() throws GUIEDTException {
 					if (send_success[0]) {
-						String message = "Success: Analyst options have been successfully sent to server";
+						String message = "Success: Analyst options have been successfully sent to server.";
 						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send Succeeded", JOptionPane.INFORMATION_MESSAGE);
 					} else {
-						String message = "Error: Unable to send analyst options to any server";
+						gui_view.view_show_console();
+						String message = "Error: Unable to send analyst options to any server.\n\nMore information may be available in the Console window.";
 						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send Failed", JOptionPane.ERROR_MESSAGE);
 					}
 				}
@@ -910,8 +930,9 @@ public class OEGUISubFileOps extends OEGUIListener {
 					// If error, report the exception
 							
 					else {
+						gui_view.view_show_console();
 						System.err.println (pdl_result[1]);
-						JOptionPane.showMessageDialog(gui_top.get_top_window(), pdl_result[0], "Error sending product", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(gui_top.get_top_window(), pdl_result[0] + "\n\nMore information may be available in the Console window.", "Error sending product", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			};
@@ -1118,8 +1139,9 @@ public class OEGUISubFileOps extends OEGUIListener {
 					// If error, report the exception
 							
 					else {
+						gui_view.view_show_console();
 						System.err.println (pdl_result[1]);
-						JOptionPane.showMessageDialog(gui_top.get_top_window(), pdl_result[0], "Error sending product", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(gui_top.get_top_window(), pdl_result[0] + "\n\nMore information may be available in the Console window.", "Error sending product", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			};

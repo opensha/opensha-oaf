@@ -17,7 +17,9 @@ import org.opensha.commons.geo.Location;
 //
 // This function supplies a Bayesian prior density, which combines a triangular
 // distribution with exponential tails on relative-ams, a skew normal distribution
-// on n, a Cauchy distribution on p, and a normal distribution on c.
+// on n, and a bivariate Cauchy joint distribution on p and c.
+// (Previous versions used a Cauchy distribution on p and a normal distribution on c,
+// and the ability to do so still exists and is accessible through the config file.)
 // Parameters and formulas are given in OEMixedRNPCParams, and locatoin-dependent
 // parameters are available from a configuration file through OEMixedRNPCConfig.
 //
@@ -203,6 +205,45 @@ public class OEBayPriorMixedRNPC extends OEBayPrior {
 		}
 
 		return;
+	}
+
+
+
+
+	//----- Information -----
+
+
+	// Get the name of the Bayesian prior.
+
+	public static final String bay_name = "Hierarchical";
+
+	@Override
+	public String get_bay_name () {
+		return bay_name;
+	}
+
+
+	// Get the regime or region for the Bayesian prior's internal parameters.
+
+	@Override
+	public String get_bay_regime () {
+		return ppdist_params.get_regimeName();
+	}
+
+
+	// Return true if the Bayesian prior's internal parameters apply globally or are a global average.
+
+	@Override
+	public boolean is_bay_regime_global () {
+		return (ppdist_params.get_regimeName().equals (OEMixedRNPCParams.GLOBAL_REGIME));
+	}
+
+
+	// Get a version associated with the Bayesian prior's internal parameters or formulas.
+
+	@Override
+	public String get_bay_internal_version () {
+		return (new OEMixedRNPCConfig()).get_params_version();
 	}
 
 

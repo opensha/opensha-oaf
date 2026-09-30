@@ -18,6 +18,7 @@ import org.opensha.oaf.oetas.bay.OEBayFactory;
 import org.opensha.oaf.oetas.bay.OEBayFactoryParams;
 import org.opensha.oaf.oetas.bay.OEBayPrior;
 import org.opensha.oaf.oetas.bay.OEBayPriorParams;
+import org.opensha.oaf.oetas.bay.OEBayPriorVerFit;
 
 import org.opensha.oaf.oetas.util.OEValueElement;
 
@@ -70,6 +71,12 @@ public class OEDisc2InitVoxBuilder {
 		this.bay_prior = bay_prior;
 
 		this.fit_info = fitter.get_fit_info();
+
+		// If this is the parameter fitting verification prior, configure it to match the fitter
+
+		if (bay_prior instanceof OEBayPriorVerFit) {
+			((OEBayPriorVerFit)bay_prior).config_prior (fitter);
+		}
 
 		return this;
 	}

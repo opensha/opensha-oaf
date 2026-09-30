@@ -251,6 +251,45 @@ public class OEBayPriorGaussAPC extends OEBayPrior {
 
 
 
+	//----- Information -----
+
+
+	// Get the name of the Bayesian prior.
+
+	public static final String bay_name = "Gaussian";
+
+	@Override
+	public String get_bay_name () {
+		return bay_name;
+	}
+
+
+	// Get the regime or region for the Bayesian prior's internal parameters.
+
+	@Override
+	public String get_bay_regime () {
+		return gauss_params.get_regimeName();
+	}
+
+
+	// Return true if the Bayesian prior's internal parameters apply globally or are a global average.
+
+	@Override
+	public boolean is_bay_regime_global () {
+		return (gauss_params.get_regimeName().equals (OEGaussAPCParams.GLOBAL_REGIME));
+	}
+
+
+	// Get a version associated with the Bayesian prior's internal parameters or formulas.
+
+	@Override
+	public String get_bay_internal_version () {
+		return (new OEGaussAPCConfig()).get_params_version();
+	}
+
+
+
+
 	//----- Construction -----
 
 

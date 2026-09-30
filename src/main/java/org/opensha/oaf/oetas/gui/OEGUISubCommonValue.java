@@ -488,7 +488,8 @@ public class OEGUISubCommonValue extends OEGUIListener {
 	private GUIParameterListParameter init_commonValueEditParam () throws GUIEDTException {
 		commonValueList = new ParameterList();
 		commonValueEditParam = new GUIParameterListParameter("Common Parameters", commonValueList, "Common Params...",
-							"Edit Common Params", "Common Parameters", null, null, false, gui_top.get_trace_events());
+							"Edit Common Params", "Common Parameters", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_param_common.html"));
 		commonValueEditParam.setInfo("Set common parameter values");
 		register_param (commonValueEditParam, "commonValueEditParam", PARMGRP_COM_EDIT);
 
@@ -1096,8 +1097,14 @@ public class OEGUISubCommonValue extends OEGUIListener {
 		else if (custom_min_mag_bins[custom_min_mag_bins.length - 1] >= 7.5) {
 			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_80);
 		}
-		else {
+		else if (custom_min_mag_bins[custom_min_mag_bins.length - 1] >= 6.5) {
 			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_70);
+		}
+		else if (custom_min_mag_bins[custom_min_mag_bins.length - 1] >= 5.5) {
+			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_60);
+		}
+		else {
+			updateParam(minMagBinsOptionParam, MinMagBinsOption.RANGE_30_50);
 		}
 
 		// Need to adjust enable to pick up enable state corresponding to time-dependent Mc option

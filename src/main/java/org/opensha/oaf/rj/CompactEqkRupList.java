@@ -295,12 +295,12 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		return ( (double)(((lat_lon_depth >> DEPTH_SHIFT) & DEPTH_MASK) - DEPTH_OFFSET) ) / DEPTH_SCALE;
 	}
 
-	// extract_location - Extract location (returns null if lat_lon_depth is zero).
+	// extract_location - Extract location (returns Location (0.0, 0.0, 0.0) if lat_lon_depth is zero).
 
 	public static Location extract_location (long lat_lon_depth) {
 
 		if (lat_lon_depth == 0L) {
-			return null;
+			return new Location (0.0, 0.0, 0.0);
 		}
 
 		double lat = ( (double)((lat_lon_depth & LAT_MASK) - LAT_OFFSET) ) / LAT_SCALE;
@@ -310,13 +310,13 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		return new Location(lat, lon, depth);
 	}
 
-	// extract_location_wrapped - Extract location (returns null if lat_lon_depth is zero), with longitude wrapping.
+	// extract_location_wrapped - Extract location (returns Location (0.0, 0.0, 0.0) if lat_lon_depth is zero), with longitude wrapping.
 	// If wrapLon is true, longitude is between 0 and 360; if wrapLon is false, longitude is between -180 and 180.
 
 	public static Location extract_location_wrapped (long lat_lon_depth, boolean wrapLon) {
 
 		if (lat_lon_depth == 0L) {
-			return null;
+			return new Location (0.0, 0.0, 0.0);
 		}
 
 		double lat = ( (double)((lat_lon_depth & LAT_MASK) - LAT_OFFSET) ) / LAT_SCALE;
@@ -866,11 +866,11 @@ public class CompactEqkRupList extends AbstractList<ObsEqkRupture> {
 		double mag = rangen.uniform_sample (mag_min, mag_max);
 		long time = Math.round (rangen.uniform_sample ((double)time_min, (double)time_max));
 
-		// One time in 100, use a null Location
+		// One time in 100, use a null Location [ObsEqkRupture does not allow null Location any more]
 
-		if (rangen.uniform_sample (0.0, 1.0) < 0.01) {
-			return new ObsEqkRupture (null, time, null, mag);
-		}
+		//  if (rangen.uniform_sample (0.0, 1.0) < 0.01) {
+		//  	return new ObsEqkRupture (null, time, null, mag);
+		//  }
 
 		// Return the rupture
 	

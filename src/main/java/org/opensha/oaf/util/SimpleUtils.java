@@ -177,6 +177,32 @@ public class SimpleUtils {
 
 
 
+	// Convert a time (in milliseconds after the epoch) to a human-readable string, including milliseconds.
+
+	private static final SimpleDateFormat time_to_string_with_millis_fmt = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss.SSS z");
+	static {
+		time_to_string_with_millis_fmt.setTimeZone (tz_utc);
+	}
+
+	public static String time_to_string_with_millis (long the_time) {
+		return time_to_string_with_millis_fmt.format (new Date (the_time));
+	}
+
+
+
+
+	// Convert a time (in milliseconds after the epoch) to a human-readable string, including milliseconds if needed.
+
+	public static String time_to_string_optional_millis (long the_time) {
+		if (the_time % 1000L == 0L) {
+			return time_to_string (the_time);
+		}
+		return time_to_string_with_millis (the_time);
+	}
+
+
+
+
 	// Convert a time (in milliseconds after the epoch) to a human-readable string.
 	// This version does not have the "UTC" suffix (but the time is still UTC).
 
@@ -243,6 +269,18 @@ public class SimpleUtils {
 		//fmt.setTimeZone (TimeZone.getTimeZone ("UTC"));
 		//return fmt.format (new Date (the_time));
 		return Instant.ofEpochMilli(the_time).toString();
+	}
+
+
+
+
+	// Given a time (in milliseconds after the epoch), produce a string which
+	// is its numerical value followed by the parseable string (ISO-8601 format) in parentheses.
+	// If (and only if) the milliseconds are non-zero, then the seconds field includes
+	// a decimal part with three decimal places.
+
+	public static String time_raw_and_parseable_string (long the_time) {
+		return the_time + " (" + time_to_parseable_string(the_time) + ")";
 	}
 
 
@@ -461,14 +499,14 @@ public class SimpleUtils {
 
 		// Leading field is days
 
-		if (days != 0) {
-			if (millis != 0) {
+		if (days != 0L) {
+			if (millis != 0L) {
 				result = String.format ("%sP%dDT%dH%dM%d.%03dS", sign, days, hours, minutes, seconds, millis);
-			} else if (seconds != 0) {
+			} else if (seconds != 0L) {
 				result = String.format ("%sP%dDT%dH%dM%dS", sign, days, hours, minutes, seconds);
-			} else if (minutes != 0) {
+			} else if (minutes != 0L) {
 				result = String.format ("%sP%dDT%dH%dM", sign, days, hours, minutes);
-			} else if (hours != 0) {
+			} else if (hours != 0L) {
 				result = String.format ("%sP%dDT%dH", sign, days, hours);
 			} else {
 				result = String.format ("%sP%dD", sign, days);
@@ -477,12 +515,12 @@ public class SimpleUtils {
 
 		// Leading field is hours
 
-		else if (hours != 0) {
-			if (millis != 0) {
+		else if (hours != 0L) {
+			if (millis != 0L) {
 				result = String.format ("%sPT%dH%dM%d.%03dS", sign, hours, minutes, seconds, millis);
-			} else if (seconds != 0) {
+			} else if (seconds != 0L) {
 				result = String.format ("%sPT%dH%dM%dS", sign, hours, minutes, seconds);
-			} else if (minutes != 0) {
+			} else if (minutes != 0L) {
 				result = String.format ("%sPT%dH%dM", sign, hours, minutes);
 			} else {
 				result = String.format ("%sPT%dH", sign, hours);
@@ -491,10 +529,10 @@ public class SimpleUtils {
 
 		// Leading field is minutes
 
-		else if (minutes != 0) {
-			if (millis != 0) {
+		else if (minutes != 0L) {
+			if (millis != 0L) {
 				result = String.format ("%sPT%dM%d.%03dS", sign, minutes, seconds, millis);
-			} else if (seconds != 0) {
+			} else if (seconds != 0L) {
 				result = String.format ("%sPT%dM%dS", sign, minutes, seconds);
 			} else {
 				result = String.format ("%sPT%dM", sign, minutes);
@@ -504,7 +542,7 @@ public class SimpleUtils {
 		// Leading field is seconds
 
 		else {
-			if (millis != 0) {
+			if (millis != 0L) {
 				result = String.format ("%sPT%d.%03dS", sign, seconds, millis);
 			} else {
 				result = String.format ("%sPT%dS", sign, seconds);
@@ -556,14 +594,14 @@ public class SimpleUtils {
 
 		// Leading field is days
 
-		if (days != 0) {
-			if (millis != 0) {
+		if (days != 0L) {
+			if (millis != 0L) {
 				result = String.format ("%s%dd%dh%dm%d.%03ds", sign, days, hours, minutes, seconds, millis);
-			} else if (seconds != 0) {
+			} else if (seconds != 0L) {
 				result = String.format ("%s%dd%dh%dm%ds", sign, days, hours, minutes, seconds);
-			} else if (minutes != 0) {
+			} else if (minutes != 0L) {
 				result = String.format ("%s%dd%dh%dm", sign, days, hours, minutes);
-			} else if (hours != 0) {
+			} else if (hours != 0L) {
 				result = String.format ("%s%dd%dh", sign, days, hours);
 			} else {
 				result = String.format ("%s%dd", sign, days);
@@ -572,12 +610,12 @@ public class SimpleUtils {
 
 		// Leading field is hours
 
-		else if (hours != 0) {
-			if (millis != 0) {
+		else if (hours != 0L) {
+			if (millis != 0L) {
 				result = String.format ("%s%dh%dm%d.%03ds", sign, hours, minutes, seconds, millis);
-			} else if (seconds != 0) {
+			} else if (seconds != 0L) {
 				result = String.format ("%s%dh%dm%ds", sign, hours, minutes, seconds);
-			} else if (minutes != 0) {
+			} else if (minutes != 0L) {
 				result = String.format ("%s%dh%dm", sign, hours, minutes);
 			} else {
 				result = String.format ("%s%dh", sign, hours);
@@ -586,10 +624,10 @@ public class SimpleUtils {
 
 		// Leading field is minutes
 
-		else if (minutes != 0) {
-			if (millis != 0) {
+		else if (minutes != 0L) {
+			if (millis != 0L) {
 				result = String.format ("%s%dm%d.%03ds", sign, minutes, seconds, millis);
-			} else if (seconds != 0) {
+			} else if (seconds != 0L) {
 				result = String.format ("%s%dm%ds", sign, minutes, seconds);
 			} else {
 				result = String.format ("%s%dm", sign, minutes);
@@ -599,7 +637,7 @@ public class SimpleUtils {
 		// Leading field is seconds
 
 		else {
-			if (millis != 0) {
+			if (millis != 0L) {
 				result = String.format ("%s%d.%03ds", sign, seconds, millis);
 			} else {
 				result = String.format ("%s%ds", sign, seconds);
@@ -2006,7 +2044,7 @@ public class SimpleUtils {
 
 				// Say hello
 
-				System.out.println ("Removing trailing zeros using remove_trailing_zeros");
+				System.out.println ("Parsing simplified duration using string_to_duration_3");
 				System.out.println ("s = \"" + s + "\"");
 				System.out.println ("def_unit = " + def_unit);
 
@@ -2045,7 +2083,7 @@ public class SimpleUtils {
 		// Subcommand : Test #8
 		// Command format:
 		//  test8  string
-		// Test the operation of string_to_time and varios formatting functions.
+		// Test the operation of string_to_time and various formatting functions.
 
 		if (args[0].equalsIgnoreCase ("test8")) {
 
@@ -2078,6 +2116,12 @@ public class SimpleUtils {
 				System.out.println ("time_to_string = " + time_to_string(time));
 
 				System.out.println();
+				System.out.println ("time_to_string_with_millis = " + time_to_string_with_millis(time));
+
+				System.out.println();
+				System.out.println ("time_to_string_optional_millis = " + time_to_string_optional_millis(time));
+
+				System.out.println();
 				System.out.println ("time_to_string_no_z = " + time_to_string_no_z(time));
 
 				System.out.println();
@@ -2105,7 +2149,7 @@ public class SimpleUtils {
 		// Subcommand : Test #9
 		// Command format:
 		//  test9  string
-		// Test the operation of string_to_time_permissive and varios formatting functions.
+		// Test the operation of string_to_time_permissive and various formatting functions.
 
 		if (args[0].equalsIgnoreCase ("test9")) {
 
@@ -2136,6 +2180,12 @@ public class SimpleUtils {
 
 				System.out.println();
 				System.out.println ("time_to_string = " + time_to_string(time));
+
+				System.out.println();
+				System.out.println ("time_to_string_with_millis = " + time_to_string_with_millis(time));
+
+				System.out.println();
+				System.out.println ("time_to_string_optional_millis = " + time_to_string_optional_millis(time));
 
 				System.out.println();
 				System.out.println ("time_to_string_no_z = " + time_to_string_no_z(time));

@@ -297,6 +297,7 @@ public class OEGUIView extends OEGUIComponent {
 	private static final Color generic_color = Color.GREEN.darker();
 	private static final Color bayesian_color = Color.RED;
 	private static final Color sequence_specific_color = Color.BLUE.darker();
+	private static final Color active_color = Color.ORANGE;
 
 
 	// Get the time since the mainshock, in days.
@@ -310,19 +311,23 @@ public class OEGUIView extends OEGUIComponent {
 
 
 	// Font sizes for graphs.
-
-	private static final int tickLabelFontSize = 22;
-	private static final int axisLabelFontSize = 24;
-	private static final int plotLabelFontSize = 24;
-
+	
+	private static final PlotPreferences plotPrefs;
+	static {
+		plotPrefs = PlotPreferences.getDefaultAppPrefs();
+		plotPrefs.setTickLabelFontSize(22);
+		plotPrefs.setAxisLabelFontSize(24);
+		plotPrefs.setPlotLabelFontSize(24);
+		plotPrefs.setBackgroundColor(Color.WHITE);
+	}
 
 	// Setup graph font sizes and background color.
 
 	private static void setupGP(GraphWidget widget) {
-		widget.setPlotLabelFontSize(plotLabelFontSize);
-		widget.setAxisLabelFontSize(axisLabelFontSize);
-		widget.setTickLabelFontSize(tickLabelFontSize);
-		widget.setBackgroundColor(Color.WHITE);
+		widget.setPlotLabelFontSize(plotPrefs.getPlotLabelFontSize());
+		widget.setAxisLabelFontSize(plotPrefs.getAxisLabelFontSize());
+		widget.setTickLabelFontSize(plotPrefs.getTickLabelFontSize());
+		widget.setBackgroundColor(plotPrefs.getBackgroundColor());
 		return;
 	}
 
@@ -334,38 +339,178 @@ public class OEGUIView extends OEGUIComponent {
 	
 	private EvenlyDiscretizedFunc saved_magSizeFunc = null;
 	
-	private EvenlyDiscretizedFunc getMagSizeFunc() {
-		if (saved_magSizeFunc != null)
-			return saved_magSizeFunc;
+//  	private EvenlyDiscretizedFunc getMagSizeFunc() {
+//  		if (saved_magSizeFunc != null)
+//  			return saved_magSizeFunc;
+//  		
+//  		// size function
+//  		double minMag = 1.25;
+//  		double magDelta = 0.5;
+//  		int numMag = 2*8;
+//  		saved_magSizeFunc = new EvenlyDiscretizedFunc(minMag, numMag, magDelta);
+//  //		double maxMag = saved_magSizeFunc.getMaxX();
+//  //		double minSize = 1d;
+//  //		double maxSize = 20d;
+//  //		double sizeMult = 1.4;
+//  //		double size = minSize;
+//  		
+//  		double dS = 3;
+//  		for (int i=0; i<saved_magSizeFunc.size(); i++) {
+//  			double mag = saved_magSizeFunc.getX(i);
+//  //			double fract = (mag - minMag)/(maxMag - minMag);
+//  //			double size = minSize + fract*(maxSize - minSize);
+//  			
+//  //			saved_magSizeFunc.set(i, size);
+//  //			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 1000 / 111.111;
+//  			// scale with stress drop, from Nicholas via e-mail 10/26/2015
+//  			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 300d;
+//  			saved_magSizeFunc.set(i, radius);
+//  //			System.out.println("Mag="+mag+", radius="+radius);
+//  //			size *= sizeMult;
+//  		}
+//  		
+//  		return saved_magSizeFunc;
+//  	}
+	
+
+//	// Build the magnitude size function, given the mainshock magnitude.
+//	// Sizes are reduced for mainshock magnitude > 7.0.
+//
+//	private EvenlyDiscretizedFunc buildMagSizeFunc (double mainMag) {
+//		
+//		// Size function
+//
+//		double minMag = 1.25;
+//		double magDelta = 0.5;
+//		int numMag = 2*8;
+//		saved_magSizeFunc = new EvenlyDiscretizedFunc(minMag, numMag, magDelta);
+//
+//		// The minimum and maximum sizes of a symbol
+//
+//		double minSize = 0.5;
+//		double maxSize = 75.0;
+//
+//		// The magnitudes at which the minimum and maximum sizes occur
+//
+//		double minSizeMag = 2.5;
+//		double maxSizeMag = 7.0;
+//
+//		// If the mainshock magnitude is larger than max, then adjust the magnitude range so max is the mainshock magnitude
+//
+//		//  if (mainMag > maxSizeMag) {
+//		//  	minSizeMag += (mainMag - maxSizeMag);
+//		//  	maxSizeMag = mainMag;
+//		//  }
+//
+//		double discMainMag = saved_magSizeFunc.getX(saved_magSizeFunc.getClosestXIndex(mainMag));	// closest mag in the function
+//		if (discMainMag > maxSizeMag) {
+//			minSizeMag += (discMainMag - maxSizeMag);
+//			maxSizeMag = discMainMag;
+//		}
+//
+//		// Interpolation exponent
+//		// Note: An exponent of 1.0 would makes sizes vary linearly with magnitude.
+//
+//		double interpExp = 4.0;
+//
+//		// Compute the size for each magnitude in the function
+//
+//		for (int i=0; i<saved_magSizeFunc.size(); i++) {
+//			double mag = saved_magSizeFunc.getX(i);
+//			double fract = (mag - minSizeMag)/(maxSizeMag - minSizeMag);
+//			fract = Math.max(0.000001, Math.min(1.0, fract));
+//			double size = minSize + Math.pow(fract, interpExp)*(maxSize - minSize);
+//			
+//			saved_magSizeFunc.set(i, size);
+//		}
+//		
+//		return saved_magSizeFunc;
+//	}
+	
+
+	// Build the magnitude size function, given the mainshock magnitude.
+	// Sizes are reduced for large mainshock magnitude.
+
+	private EvenlyDiscretizedFunc buildMagSizeFunc (double mainMag) {
 		
-		// size function
+		// Size function
+
 		double minMag = 1.25;
 		double magDelta = 0.5;
 		int numMag = 2*8;
+
+		if (mainMag >= 8.5) {
+			minMag = 2.25;
+		}
+
 		saved_magSizeFunc = new EvenlyDiscretizedFunc(minMag, numMag, magDelta);
-//		double maxMag = saved_magSizeFunc.getMaxX();
-//		double minSize = 1d;
-//		double maxSize = 20d;
-//		double sizeMult = 1.4;
-//		double size = minSize;
-		
-		double dS = 3;
+
+		// The minimum and maximum sizes of a symbol
+
+		double minSize = 0.5;
+		double maxSize = 75.0;
+
+		// The magnitudes at which the minimum and maximum sizes occur
+
+		double maxSizeMag = Math.max(7.0, mainMag);
+		maxSizeMag = saved_magSizeFunc.getX(saved_magSizeFunc.getClosestXIndex(maxSizeMag));
+
+		double minSizeMag = maxSizeMag - 4.5;
+		minSizeMag = saved_magSizeFunc.getX(saved_magSizeFunc.getClosestXIndex(minSizeMag));
+
+		// Get scale factors
+
+		double maxFunc = Math.pow(10.0, 0.5*maxSizeMag);
+		double minFunc = Math.pow(10.0, 0.5*minSizeMag);
+		double scale = (maxSize - minSize)/(maxFunc - minFunc);
+		double offset = minSize - minFunc*scale;
+
+		// Compute the size for each magnitude in the function
+
 		for (int i=0; i<saved_magSizeFunc.size(); i++) {
 			double mag = saved_magSizeFunc.getX(i);
-//			double fract = (mag - minMag)/(maxMag - minMag);
-//			double size = minSize + fract*(maxSize - minSize);
-			
-//			saved_magSizeFunc.set(i, size);
-//			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 1000 / 111.111;
-			// scale with stress drop, from Nicholas via e-mail 10/26/2015
-			double radius = Math.pow((7d/16d)*Math.pow(10, 1.5*mag + 9)/(dS*1e6), 1d/3d) / 300d;
-			saved_magSizeFunc.set(i, radius);
-//			System.out.println("Mag="+mag+", radius="+radius);
-//			size *= sizeMult;
+			mag = Math.max(minSizeMag, Math.min(maxSizeMag, mag));
+			double size = Math.pow(10.0, 0.5*mag)*scale + offset;
+			saved_magSizeFunc.set(i, size);
 		}
 		
 		return saved_magSizeFunc;
 	}
+
+
+	// Get the magnitude size function.
+
+	private EvenlyDiscretizedFunc getMagSizeFunc() {
+		if (saved_magSizeFunc == null) {
+			throw new IllegalStateException ("OEGUIView.getMagSizeFunc - Magnitude size function has not been built");
+		}
+		return saved_magSizeFunc;
+	}
+
+
+	// Get a string describing the range of magnitudes for an element of the magnitude size function.
+
+	private static String getMagRangeString (EvenlyDiscretizedFunc my_magSizeFunc, int i) {
+		double magDelta = my_magSizeFunc.getDelta();
+		double mag = my_magSizeFunc.getX(i);
+		if (i == 0) {
+			return "M < " + (float)(mag+0.5*magDelta);
+		}
+		if (i == my_magSizeFunc.size() - 1) {
+			return (float)(mag-0.5*magDelta) + " < M";
+		}
+		return (float)(mag-0.5*magDelta) + " < M < " + (float)(mag+0.5*magDelta);
+	}
+
+
+	// Color to use for mainshock in epicenter plot.
+
+	private static final Color main_map_color = new Color (128, 128, 128);
+
+
+	// True to plot cities on a map twice at slightly different sizes to make them bolder.
+
+	private static final boolean city_map_bold = true;
 
 
 
@@ -430,26 +575,96 @@ public class OEGUIView extends OEGUIComponent {
 		}
 		return saved_distCPT;
 	}
+
+
+
+
+	// Enumeration that gives the purpose for which a symbol is being plotted.
+	
+	private enum SymbolPurpose {
+		EPI_MAP("Display an epicenter on a map"),
+		MAIN_MAP("Display a mainshock on a map"),
+		CITY_MAP("Display a city on a map"),
+		MAG_TIME("An earthquake on a magnitude-time plot"),
+		MAG_FREQ("A symbol on a magnitude-frequency plot");
+		
+		private String label;
+		
+		private SymbolPurpose(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		public String toString() {
+			return label;
+		}
+	}
+
+
+
+
+	// Make the PlotCurveCharacterstics to display a symbol, given the symbol purpose, symbol size, and color.
+	// Parameters:
+	//  SymbolPurpose = Symbol purpose.
+	//  symbolSize = Initial symbol size.
+	//  c = Color.
+	// This function chooses the appropriate symbol, which may vary with the purpose and size.
+	// It also may adjust the size used in the PlotCurveCharacterstics to make it display well.
+	// Note: This function provides a central place for adjusting all plotting symbols.
+
+	private PlotCurveCharacterstics makeCharsForSymbol (SymbolPurpose symbolPurpose, float symbolSize, Color c) {
+		PlotSymbol symbol = null;
+		float size = symbolSize;
+		switch (symbolPurpose) {
+
+		case EPI_MAP:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size += 1.0f;
+			break;
+
+		case MAIN_MAP:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size += 1.0f;
+			break;
+
+		case CITY_MAP:
+			symbol = PlotSymbol.SQUARE;
+			size += 2.0f;
+			break;
+
+		case MAG_TIME:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size += 1.0f;
+			break;
+
+		case MAG_FREQ:
+			symbol = PlotSymbol.FILLED_CIRCLE;
+			size = Float.max (size, 3.0f);
+			break;
+		}
+
+		return new PlotCurveCharacterstics (symbol, size, c);
+	}
 	
 
 
 
 	private void buildFuncsCharsForBinned(XY_DataSet[] binnedFuncs,
-			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, PlotSymbol sym) {
+			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, SymbolPurpose purpose) {
 		EvenlyDiscretizedFunc my_magSizeFunc = getMagSizeFunc();
-		double magDelta = my_magSizeFunc.getDelta();
+		//double magDelta = my_magSizeFunc.getDelta();
 		CPT magColorCPT = getMagCPT();
 		for (int i=0; i<binnedFuncs.length; i++) {
 			double mag = my_magSizeFunc.getX(i);
 			XY_DataSet xy = binnedFuncs[i];
 			if (xy.size() == 0)
 				continue;
-			xy.setName((float)(mag-0.5*magDelta)+" < M < "+(float)(mag+0.5*magDelta)
+			xy.setName(getMagRangeString(my_magSizeFunc, i)
 					+": "+xy.size()+" EQ");
 			float size = (float)my_magSizeFunc.getY(i);
 			Color c = magColorCPT.getColor((float)my_magSizeFunc.getX(i));
 			funcs.add(xy);
-			chars.add(new PlotCurveCharacterstics(sym, size, c));
+			chars.add(makeCharsForSymbol(purpose, size, c));
 		}
 	}
 	
@@ -467,9 +682,9 @@ public class OEGUIView extends OEGUIComponent {
 	 * @param func2
 	 */
 	private void buildFuncsCharsForBinned2D(XY_DataSet[][] binnedFuncs, List<PlotElement> funcs,
-			List<PlotCurveCharacterstics> chars, CPT cpt, String name2, EvenlyDiscretizedFunc func2, PlotSymbol sym) {
+			List<PlotCurveCharacterstics> chars, CPT cpt, String name2, EvenlyDiscretizedFunc func2, SymbolPurpose purpose) {
 		EvenlyDiscretizedFunc my_magSizeFunc = getMagSizeFunc();
-		double magDelta = my_magSizeFunc.getDelta();
+		//double magDelta = my_magSizeFunc.getDelta();
 		double func2Delta = func2.getDelta();
 		for (int i=0; i<binnedFuncs.length; i++) {
 			double mag = my_magSizeFunc.getX(i);
@@ -478,14 +693,14 @@ public class OEGUIView extends OEGUIComponent {
 				if (xy.size() == 0)
 					continue;
 				double scalar2 = func2.getX(j);
-				String name = (float)(mag-0.5*magDelta)+" < M < "+(float)(mag+0.5*magDelta);
+				String name = getMagRangeString(my_magSizeFunc, i);
 				name += ", "+(float)(scalar2-0.5*func2Delta)+" < "+name2+" < "+(float)(scalar2+0.5*func2Delta);
 				name += ": "+xy.size()+" EQ";
 				xy.setName(name);
 				float size = (float)my_magSizeFunc.getY(i);
 				Color c = cpt.getColor((float)func2.getX(j));
 				funcs.add(xy);
-				chars.add(new PlotCurveCharacterstics(sym, size, c));
+				chars.add(makeCharsForSymbol(purpose, size, c));
 			}
 		}
 	}
@@ -494,19 +709,19 @@ public class OEGUIView extends OEGUIComponent {
 
 
 	private void buildFuncsCharsForBinnedFS(XY_DataSet[] binnedFuncs,
-			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, PlotSymbol sym, Color c) {
+			List<PlotElement> funcs, List<PlotCurveCharacterstics> chars, SymbolPurpose purpose, Color c) {
 		EvenlyDiscretizedFunc my_magSizeFunc = getMagSizeFunc();
-		double magDelta = my_magSizeFunc.getDelta();
+		//double magDelta = my_magSizeFunc.getDelta();
 		for (int i=0; i<binnedFuncs.length; i++) {
 			double mag = my_magSizeFunc.getX(i);
 			XY_DataSet xy = binnedFuncs[i];
 			if (xy.size() == 0)
 				continue;
-			xy.setName((float)(mag-0.5*magDelta)+" < M < "+(float)(mag+0.5*magDelta)
+			xy.setName(getMagRangeString(my_magSizeFunc, i)
 					+": "+xy.size()+" FS");
 			float size = (float)my_magSizeFunc.getY(i);
 			funcs.add(xy);
-			chars.add(new PlotCurveCharacterstics(sym, size, c));
+			chars.add(makeCharsForSymbol(purpose, size, c));
 		}
 	}
 
@@ -582,8 +797,9 @@ public class OEGUIView extends OEGUIComponent {
 	// Plot the epicenters.
 	// This routine can re-plot an existing tab.
 	// Must be called with model state >= MODSTATE_CATALOG.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 	
-	private void plotAftershockHypocs() {
+	private void plotAftershockHypocs() throws GUIEDTException {
 
 		if (gui_top.get_trace_events()) {
 			System.out.println ("@@@@@ Entry: OEGUIView.plotAftershockHypocs, tab count = " + tabbedPane.getTabCount());
@@ -592,6 +808,10 @@ public class OEGUIView extends OEGUIComponent {
 		if (!( gui_model.modstate_has_catalog() )) {
 			throw new IllegalStateException ("OEGUIView.plotAftershockHypocs - Invalid model state: " + gui_model.cur_modstate_string());
 		}
+
+		// Build the magnitude size function
+
+		buildMagSizeFunc (gui_model.get_cur_mainshock().getMag());
 
 		// The outer region, or null if none, to plot the regional aftershocks
 
@@ -670,12 +890,12 @@ public class OEGUIView extends OEGUIComponent {
 			float size = (float)my_magSizeFunc.getY(my_magSizeFunc.getClosestXIndex(gui_model.get_cur_mainshock().getMag()));
 			Color c;
 			if (colorByTime) {
-				c = timeCPT.getMinColor();		//TODO: Use color for mainshock time, not necessarily min color
+				//c = timeCPT.getMinColor();		//TODO: Use color for mainshock time, not necessarily min color
+				c = main_map_color;		// This allows early aftershocks appearing on top of the mainshock to be visible
 			} else {
 				c = Color.BLACK;
 			}
-			//chars.add(new PlotCurveCharacterstics(PlotSymbol.FILLED_CIRCLE, size, c));
-			chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, size, c));
+			chars.add(makeCharsForSymbol(SymbolPurpose.MAIN_MAP, size, c));
 		}
 		
 		// Create lists of aftershock epicenters, magnitudes, and times after mainshock in days
@@ -713,7 +933,7 @@ public class OEGUIView extends OEGUIComponent {
 
 			XY_DataSet[] foreshockDatasets = XY_DatasetBinner.bin(points_fs, mags_fs, my_magSizeFunc);
 			
-			buildFuncsCharsForBinnedFS(foreshockDatasets, funcs, chars, PlotSymbol.CIRCLE, Color.DARK_GRAY);
+			buildFuncsCharsForBinnedFS(foreshockDatasets, funcs, chars, SymbolPurpose.EPI_MAP, Color.DARK_GRAY);
 		}
 
 		// If coloring aftershock by time ...
@@ -722,13 +942,15 @@ public class OEGUIView extends OEGUIComponent {
 
 			// Bin aftershocks by magnitude and time
 
-			EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, 1d);	//TODO: Allow for time to extend before mainshock
+			//EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, 1d);	//TODO: Allow for time to extend before mainshock
+			double plotDelta = Math.max (0.001, timeCPT.getMaxValue() / 100.0);
+			EvenlyDiscretizedFunc timeFunc = HistogramFunction.getEncompassingHistogram(0d, timeCPT.getMaxValue()*0.99, plotDelta);	//TODO: Allow for time to extend before mainshock
+			
 			XY_DataSet[][] aftershockDatasets = XY_DatasetBinner.bin2D(points, mags, timeDeltas, my_magSizeFunc, timeFunc);
 
 			// Bin aftershocks by magnitude and time.
 			
-			//buildFuncsCharsForBinned2D(aftershockDatasets, funcs, chars, timeCPT, "time", timeFunc, PlotSymbol.FILLED_CIRCLE);
-			buildFuncsCharsForBinned2D(aftershockDatasets, funcs, chars, timeCPT, "time", timeFunc, PlotSymbol.CIRCLE);
+			buildFuncsCharsForBinned2D(aftershockDatasets, funcs, chars, timeCPT, "time", timeFunc, SymbolPurpose.EPI_MAP);
 			
 			// The graph legend
 
@@ -736,7 +958,7 @@ public class OEGUIView extends OEGUIComponent {
 			if ((timeCPT.getMaxValue() - timeCPT.getMinValue()) < 10) {
 				cptInc = 1d;
 			}
-			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(timeCPT, "Time (days)", plotPrefs,
 					cptInc, RectangleEdge.RIGHT);
 
 		// Otherwise, color by magnitude ...
@@ -746,7 +968,7 @@ public class OEGUIView extends OEGUIComponent {
 
 			XY_DataSet[] aftershockDatasets = XY_DatasetBinner.bin(points, mags, my_magSizeFunc);
 			
-			buildFuncsCharsForBinned(aftershockDatasets, funcs, chars, PlotSymbol.CIRCLE);
+			buildFuncsCharsForBinned(aftershockDatasets, funcs, chars, SymbolPurpose.EPI_MAP);
 		}
 		
 		// Now add outline of region, if we have one
@@ -789,6 +1011,9 @@ public class OEGUIView extends OEGUIComponent {
 		// Create a plot with the given functions and characteristics
 		
 		PlotSpec spec = new PlotSpec(funcs, chars, "Aftershock Epicenters", "Longitude", "Latitude");
+		if (subtitle != null) {
+			spec.addSubtitle(subtitle);
+		}
 
 		boolean new_tab = false;
 
@@ -831,9 +1056,9 @@ public class OEGUIView extends OEGUIComponent {
 		
 		setupGP(epicenterGraph);
 		
-		if (subtitle != null) {
-			epicenterGraph.getGraphPanel().addSubtitle(subtitle);
-		}
+		//if (subtitle != null) {
+		//	epicenterGraph.getGraphPanel().addSubtitle(subtitle);
+		//}
 
 		// Add to the view
 
@@ -895,8 +1120,8 @@ public class OEGUIView extends OEGUIComponent {
 		
 		mfd.setName("Incremental");
 		funcs.add(mfd);
-//		chars.add(new PlotCurveCharacterstics(PlotLineType.HISTOGRAM, 1f, Color.BLUE));
-		chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, 6f, Color.BLUE));
+		//chars.add(new PlotCurveCharacterstics(PlotLineType.HISTOGRAM, 1f, Color.BLUE));
+		chars.add(makeCharsForSymbol(SymbolPurpose.MAG_FREQ, 6f, Color.BLUE));
 
 		// Get the magnitude range, for the X-axis
 		
@@ -942,7 +1167,7 @@ public class OEGUIView extends OEGUIComponent {
 			}
 			
 			funcs.add(cmlPoints);
-			chars.add(new PlotCurveCharacterstics(PlotSymbol.CIRCLE, 6f, Color.BLACK));
+			chars.add(makeCharsForSymbol(SymbolPurpose.MAG_FREQ, 6f, Color.BLACK));
 		}
 
 		// Get Y-axis range
@@ -1105,6 +1330,10 @@ public class OEGUIView extends OEGUIComponent {
 			throw new IllegalStateException ("OEGUIView.plotMagVsTime - Invalid model state: " + gui_model.cur_modstate_string());
 		}
 
+		// Build the magnitude size function
+
+		buildMagSizeFunc (gui_model.get_cur_mainshock().getMag());
+
 		// List of points and their corresponding magnitude, each point is (time, mag).
 
 		List<Point2D> points = Lists.newArrayList();
@@ -1163,9 +1392,9 @@ public class OEGUIView extends OEGUIComponent {
 			
 			CPT my_distCPT = getDistCPT();
 			
-			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, my_distCPT, "dist", my_distFunc, PlotSymbol.FILLED_CIRCLE);
+			buildFuncsCharsForBinned2D(binnedFuncs, funcs, chars, my_distCPT, "dist", my_distFunc, SymbolPurpose.MAG_TIME);
 			
-			subtitle = GraphPanel.getLegendForCPT(my_distCPT, "Distance (km)", axisLabelFontSize, tickLabelFontSize,
+			subtitle = GraphPanel.getLegendForCPT(my_distCPT, "Distance (km)", plotPrefs,
 					0d, RectangleEdge.RIGHT);
 
 		// Otherwise, color by magnitude ...
@@ -1176,12 +1405,15 @@ public class OEGUIView extends OEGUIComponent {
 				// The point points[k] is placed into the bin i so that: i is the index into
 				// my_magSizeFunc whose X-value is closest to mags[k].
 			
-			buildFuncsCharsForBinned(magBinnedFuncs, funcs, chars, PlotSymbol.CIRCLE);
+			buildFuncsCharsForBinned(magBinnedFuncs, funcs, chars, SymbolPurpose.MAG_TIME);
 		}
 
 		// Create a plot with the given functions and characteristics
 		
 		PlotSpec spec = new PlotSpec(funcs, chars, "Magnitude Vs Time", "Days Since Mainshock", "Magnitude");
+		if (subtitle != null) {
+			spec.addSubtitle(subtitle);
+		}
 
 		boolean new_tab = false;
 		
@@ -1201,8 +1433,8 @@ public class OEGUIView extends OEGUIComponent {
 		
 		setupGP(magTimeGraph);
 
-		if (subtitle != null)
-			magTimeGraph.getGraphPanel().addSubtitle(subtitle);
+		//if (subtitle != null)
+		//	magTimeGraph.getGraphPanel().addSubtitle(subtitle);
 
 		// Add to the view
 		
@@ -1301,6 +1533,9 @@ public class OEGUIView extends OEGUIComponent {
 		// Scan the list, and for each aftershock above the magnitude of completeness,
 		// add an point to the Function
 
+		countFunc.set(0.0, count);
+		double count_last_time = 0.0;		// the last time put into the function
+		double small_time_delta = gui_model.get_cat_dataEndTimeParam() / 1000.0;	// small time relative to plot size
 		for (int i=0; i<gui_model.get_cur_aftershocks().size(); i++) {
 			ObsEqkRupture aftershock = gui_model.get_cur_aftershocks().get(i);
 			double time = getTimeSinceMainshock(aftershock);	// time in days
@@ -1310,8 +1545,14 @@ public class OEGUIView extends OEGUIComponent {
 			if (aftershock.getMag() < magCompFn.getMagCompleteness (magMain, magMin, time)) {
 				continue;
 			}
+			if (time - count_last_time > small_time_delta * 2.0) {
+				// This line creates a stairstep effect where each aftershock produces a near-vertical uptick;
+				// remove this line to smoothly interpolate from one aftershock to the next (the original version)
+				countFunc.set(time - small_time_delta, count);
+			}
 			count++;
 			countFunc.set(time, count);
+			count_last_time = time;
 		}
 		countFunc.set(gui_model.get_cat_dataEndTimeParam(), count);
 		countFunc.setName("Data: "+(int)countFunc.getMaxY());
@@ -1411,14 +1652,16 @@ public class OEGUIView extends OEGUIComponent {
 	private EvenlyDiscretizedFunc getModelCumNumWithTimePlot(RJ_AftershockModel the_model, double magMin, MagCompFn magCompFnPlot) {
 		double tMin = Math.max (0.0, gui_model.get_cat_dataStartTimeParam());	// foreshock fix
 		double tMax = gui_model.get_cat_dataEndTimeParam();
-		if (gui_model.modstate_has_forecast()) {
-			//tMax = Math.max(tMax, gui_model.get_cat_forecastEndTimeParam());	// if we have a forecast, extend at least to end of forecast
-			//TODO: For now, instead of a user parameter, use the data end time plus advisory duration
-			double end_days = gui_model.get_cat_dataEndTimeParam();
-			long end_millis = SimpleUtils.days_to_millis (end_days);
-			long adv_millis = ForecastResults.forecast_lag_to_advisory_lag (end_millis, new ActionConfig());
-			tMax = Math.max (tMax, end_days + SimpleUtils.millis_to_days (adv_millis));
-		}
+
+		//  if (gui_model.modstate_has_forecast()) {
+		//  	//tMax = Math.max(tMax, gui_model.get_cat_forecastEndTimeParam());	// if we have a forecast, extend at least to end of forecast
+		//  	//TODO: For now, instead of a user parameter, use the data end time plus advisory duration
+		//  	double end_days = gui_model.get_cat_dataEndTimeParam();
+		//  	long end_millis = SimpleUtils.days_to_millis (end_days);
+		//  	long adv_millis = ForecastResults.forecast_lag_to_advisory_lag (end_millis, new ActionConfig());
+		//  	tMax = Math.max (tMax, end_days + SimpleUtils.millis_to_days (adv_millis));
+		//  }
+
 		Preconditions.checkState(tMax > tMin);
 		double tDelta = (tMax - tMin)/1000d;
 		if (magCompFnPlot == null) {
@@ -1779,6 +2022,45 @@ public class OEGUIView extends OEGUIComponent {
 
 
 
+	// Make a stairstep function from arrays of arguments and values, and a name.
+	// Parameters:
+	//  args = Function arguments.
+	//  vals = Function values.
+	//  name = Name to assign, can be null for none.
+	//  darg = Delta for arguments.
+	//  dval = Delta for values.
+	// If two successive points have arguments that differ by more than 2*darg and values
+	// that differ by more than dval, then a stairstep is created by inserting an additional
+	// point with argument darg less than the second point, and value equal to the first point.
+	// This assumes that arguments are given in increasing order.
+
+	private ArbitrarilyDiscretizedFunc func_from_args_vals_stairstep (double[] args, double[] vals, String name, double darg, double dval) {
+		if (!( args.length == vals.length )) {
+			throw new IllegalArgumentException ("OEGUIView.func_from_args_vals_stairstep: Array length mismatch: args.length = " + args.length + ", vals.length = " + vals.length);
+		}
+		ArbitrarilyDiscretizedFunc func = new ArbitrarilyDiscretizedFunc();
+
+		// Add all the points
+
+		for (int j = 0; j < args.length; ++j) {
+			if (j > 0 && args[j] - args[j-1] > 2.0*darg && Math.abs (vals[j] - vals[j-1]) > dval) {
+				func.set (args[j] - darg, vals[j-1]);
+			}
+			func.set (args[j], vals[j]);
+		}
+
+		// If a name is supplied, set it
+
+		if (name != null) {
+			func.setName (name);
+		}
+
+		return func;
+	}
+
+
+
+
 	// Make a 1D PDF function.
 	// Parameters:
 	//  dist_set = Marginal distribution set. Can be null.
@@ -1896,12 +2178,16 @@ public class OEGUIView extends OEGUIComponent {
 	//  seq_data_name = Data name, for sequence specific.
 	//  bay_dist_set = Marginal distribution set, for bayesian. Can be null.
 	//  bay_data_name = Data name, for bayesian.
+	//  act_dist_set = Marginal distribution set, for active. Can be null.
+	//  act_data_name = Data name, for bayesian.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 
 	private void make_1d_pdf (
 		String title, String tab_text, String var_name,
 		OEMarginalDistSet gen_dist_set, String gen_data_name,
 		OEMarginalDistSet seq_dist_set, String seq_data_name,
-		OEMarginalDistSet bay_dist_set, String bay_data_name)
+		OEMarginalDistSet bay_dist_set, String bay_data_name,
+		OEMarginalDistSet act_dist_set, String act_data_name) throws GUIEDTException
 	{
 		// Natural scale
 
@@ -1944,6 +2230,16 @@ public class OEGUIView extends OEGUIComponent {
 			chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 2f, bayesian_color));
 		}
 
+		// Active PDF
+
+		ArbitrarilyDiscretizedFunc act_func = make_1d_pdf_func (
+			act_dist_set, var_name, act_data_name, "Custom", rscale);
+
+		if (act_func != null) {
+			funcs.add (act_func);
+			chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 2f, active_color));
+		}
+
 		// If we got at least one function ...
 
 		if (funcs.size() > 0) {
@@ -1974,7 +2270,7 @@ public class OEGUIView extends OEGUIComponent {
 
 			if (OEDiscreteRange.is_rscale_log (rscale[0])) {
 
-				PlotPreferences plotPrefs = PlotPreferences.getDefault();
+				PlotPreferences plotPrefs = PlotPreferences.getDefaultAppPrefs();
 				boolean xLog = true;
 				boolean yLog = false;
 				Range xRange = new Range (min_x * Math.pow(max_x / min_x, -0.06), max_x * Math.pow(max_x / min_x, 0.06));
@@ -2003,6 +2299,42 @@ public class OEGUIView extends OEGUIComponent {
 
 			pdfGraphsPane.addTab (tab_text, null, widget);
 		}
+
+		return;
+	}
+
+
+
+
+	// Make a 1D PDF given marginals.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name = Variable name.
+	//  gen_dist_set = Marginal distribution set, for generic. Can be null.
+	//  gen_data_name = Data name, for generic.
+	//  seq_dist_set = Marginal distribution set, for sequence specific. Can be null.
+	//  seq_data_name = Data name, for sequence specific.
+	//  bay_dist_set = Marginal distribution set, for bayesian. Can be null.
+	//  bay_data_name = Data name, for bayesian.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
+
+	private void make_1d_pdf (
+		String title, String tab_text, String var_name,
+		OEMarginalDistSet gen_dist_set, String gen_data_name,
+		OEMarginalDistSet seq_dist_set, String seq_data_name,
+		OEMarginalDistSet bay_dist_set, String bay_data_name) throws GUIEDTException
+	{
+		OEMarginalDistSet act_dist_set = null;
+		String act_data_name = "";
+
+		make_1d_pdf (
+			title, tab_text, var_name,
+			gen_dist_set, gen_data_name,
+			seq_dist_set, seq_data_name,
+			bay_dist_set, bay_data_name,
+			act_dist_set, act_data_name
+		);
 
 		return;
 	}
@@ -2208,14 +2540,14 @@ public class OEGUIView extends OEGUIComponent {
 	// Make a 2D PDF given a marginal.
 	// Parameters:
 	//  title = Plot title.
-	//  tab_text = Text to appear on the tab.
 	//  var_name1 = Variable name #1.
 	//  var_name2 = Variable name #2.
 	//  dist_set = Marginal distribution set.
 	//  data_name = Data name.
+	// Returns the graph widget, or null if unable to create.
 
-	private void make_2d_pdf (
-		String title, String tab_text, String var_name1, String var_name2,
+	private GraphWidget make_2d_pdf (
+		String title, String var_name1, String var_name2,
 		OEMarginalDistSet dist_set, String data_name)
 	{
 		// Natural scale
@@ -2230,7 +2562,7 @@ public class OEGUIView extends OEGUIComponent {
 			dist_set, var_name1, var_name2, data_name, rscale);
 
 		if (func == null) {
-			return;
+			return null;
 		}
 		
 		// Get a color scale, for the Z-values in the pdf
@@ -2257,11 +2589,8 @@ public class OEGUIView extends OEGUIComponent {
 		
 		XYZPlotSpec spec = new XYZPlotSpec (func, cpt, title, name1, name2, "Density");
 		
-		//XYZGraphPanel xyzGP = new XYZGraphPanel();
-		//pdfGraphsPane.addTab(name1+" vs "+name2, null, xyzGP);
 		GraphWidget widget = new GraphWidget(spec);
 		setupGP(widget);
-		pdfGraphsPane.addTab (tab_text, null, widget);
 
 		// Draw the PDF
 
@@ -2270,6 +2599,152 @@ public class OEGUIView extends OEGUIComponent {
 		widget.setAxisRange(
 			new Range(func.getMinX()-0.5*xDelta, func.getMaxX()+0.5*xDelta),
 			new Range(func.getMinY()-0.5*yDelta, func.getMaxY()+0.5*yDelta));
+
+		return widget;
+	}
+
+
+
+
+	// Make a 2D PDF given a marginal.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name1 = Variable name #1.
+	//  var_name2 = Variable name #2.
+	//  dist_set = Marginal distribution set.
+	//  data_name = Data name.
+
+	private void make_2d_pdf (
+		String title, String tab_text, String var_name1, String var_name2,
+		OEMarginalDistSet dist_set, String data_name)
+	{
+		// Make the widget for the 2D PDF
+
+		GraphWidget widget = make_2d_pdf (
+			title, var_name1, var_name2,
+			dist_set, data_name
+		);
+
+		// If we got one, add to the view
+
+		if (widget != null) {
+			pdfGraphsPane.addTab (tab_text, null, widget);
+		}
+
+		return;
+	}
+
+
+
+
+	// True to produce multiple 2D PDFs for ETAS.
+
+	private boolean f_multi_pdf_etas = true;
+
+
+
+
+	// Make a 2D PDF given a marginal.
+	// Parameters:
+	//  title = Plot title.
+	//  tab_text = Text to appear on the tab.
+	//  var_name1 = Variable name #1.
+	//  var_name2 = Variable name #2.
+	//  dist_set = Marginal distribution set.
+	//  data_name = Data name.
+	//  f_etas_active = True to display active mocel (as "custom").
+	// Note: If f_multi_pdf_etas, make a tabbed plot for multiple models,
+	// and ignore title and data_name.  Otherwise, make a single plot.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
+
+	private void make_2d_pdf_etas (
+		String title, String tab_text, String var_name1, String var_name2,
+		OEMarginalDistSet dist_set, String data_name, boolean f_etas_active) throws GUIEDTException
+	{
+		// Handle case of single plot
+
+		if (!( f_multi_pdf_etas )) {
+			make_2d_pdf (
+				title, tab_text, var_name1, var_name2,
+				dist_set, data_name
+			);
+			return;
+		}
+
+		// Tabbed pane and selected widget
+
+		JTabbedPane tab_pane = null;
+		GraphWidget selected_widget = null;
+
+		// Sequence specific
+
+		GraphWidget seq_widget = make_2d_pdf (
+			"ETAS (SeqSpec) PDF for " + var_name1 + " vs " + var_name2, var_name1, var_name2,
+			dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+		);
+
+		if (seq_widget != null) {
+			if (tab_pane == null) {
+				tab_pane = new JTabbedPane();
+				selected_widget = seq_widget;
+			}
+			tab_pane.addTab ("SeqSpec", null, seq_widget);
+		}
+
+		// Bayesian
+
+		GraphWidget bay_widget = make_2d_pdf (
+			"ETAS (Bayesian) PDF for " + var_name1 + " vs " + var_name2, var_name1, var_name2,
+			dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+		);
+
+		if (bay_widget != null) {
+			if (tab_pane == null) {
+				tab_pane = new JTabbedPane();
+				selected_widget = bay_widget;
+			}
+			tab_pane.addTab ("Bayesian", null, bay_widget);
+		}
+
+		// Generic
+
+		GraphWidget gen_widget = make_2d_pdf (
+			"ETAS (Generic) PDF for " + var_name1 + " vs " + var_name2, var_name1, var_name2,
+			dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC
+		);
+
+		if (gen_widget != null) {
+			if (tab_pane == null) {
+				tab_pane = new JTabbedPane();
+				selected_widget = gen_widget;
+			}
+			tab_pane.addTab ("Generic", null, gen_widget);
+		}
+
+		// Active
+
+		if (f_etas_active) {
+			GraphWidget act_widget = make_2d_pdf (
+				"ETAS (Custom) PDF for " + var_name1 + " vs " + var_name2, var_name1, var_name2,
+				dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
+			);
+
+			if (act_widget != null) {
+				if (tab_pane == null) {
+					tab_pane = new JTabbedPane();
+					selected_widget = act_widget;
+				}
+				tab_pane.addTab ("Custom", null, act_widget);
+			}
+		}
+
+		// If we made a graph, add to the view
+
+		if (tab_pane != null) {
+			tab_pane.setSelectedComponent (selected_widget);
+			pdfGraphsPane.addTab (tab_text, null, tab_pane);
+		}
 
 		return;
 	}
@@ -2532,13 +3007,14 @@ public class OEGUIView extends OEGUIComponent {
 	//  var_name2 = Variable name #2.
 	//  dist_set = Marginal distribution set.
 	//  data_name = Data name.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 	//
 	// Note: Testing shows that ArbDiscrXYZ_DataSet does not plot properly when one
 	// of the axes is on a log scale.  So, use of this function is not recommended.
 
 	private void make_2d_pdf_v2 (
 		String title, String tab_text, String var_name1, String var_name2,
-		OEMarginalDistSet dist_set, String data_name)
+		OEMarginalDistSet dist_set, String data_name) throws GUIEDTException
 	{
 		// Natural scale
 
@@ -2584,7 +3060,7 @@ public class OEGUIView extends OEGUIComponent {
 		double min_y = y_bounds[0];
 		double max_y = y_bounds[1];
 
-		PlotPreferences plotPrefs = PlotPreferences.getDefault();
+		PlotPreferences plotPrefs = PlotPreferences.getDefaultAppPrefs();
 		boolean xLog = OEDiscreteRange.is_rscale_log (rscale[0]);
 		boolean yLog = OEDiscreteRange.is_rscale_log (rscale[1]);
 
@@ -2668,6 +3144,12 @@ public class OEGUIView extends OEGUIComponent {
 
 		OEMarginalDistSet etas_dist_set = gui_model.get_etas_marginals();
 
+		boolean f_etas_active = gui_model.get_f_etas_active_custom();
+		OEMarginalDistSet etas_act_dist_set = null;
+		if (f_etas_active) {
+			etas_act_dist_set = etas_dist_set;
+		}
+
 		// Add tabs for RJ 1D marginals
 
 		make_1d_pdf (
@@ -2723,35 +3205,40 @@ public class OEGUIView extends OEGUIComponent {
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_N, "E " + OEMarginalDistSetBuilder.VNAME_N, OEMarginalDistSetBuilder.VNAME_N,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		make_1d_pdf (
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_ZAMS, "E " + OEMarginalDistSetBuilder.VNAME_ZAMS, OEMarginalDistSetBuilder.VNAME_ZAMS,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		make_1d_pdf (
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_P, "E " + OEMarginalDistSetBuilder.VNAME_P, OEMarginalDistSetBuilder.VNAME_P,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		make_1d_pdf (
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_C, "E " + OEMarginalDistSetBuilder.VNAME_C, OEMarginalDistSetBuilder.VNAME_C,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		make_1d_pdf (
 			"ETAS PDF for " + OEMarginalDistSetBuilder.VNAME_ZMU, "E " + OEMarginalDistSetBuilder.VNAME_ZMU, OEMarginalDistSetBuilder.VNAME_ZMU,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_GENERIC,
 			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_BAYESIAN,
+			etas_act_dist_set, OEMarginalDistSetBuilder.DNAME_ACTIVE
 		);
 
 		// Add tabs for ETAS 2D PDFs
@@ -2762,111 +3249,111 @@ public class OEGUIView extends OEGUIComponent {
 		var1 = OEMarginalDistSetBuilder.VNAME_N;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZAMS;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_N;
 		var2 = OEMarginalDistSetBuilder.VNAME_P;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_N;
 		var2 = OEMarginalDistSetBuilder.VNAME_C;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_N;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
 		var2 = OEMarginalDistSetBuilder.VNAME_P;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
 		var2 = OEMarginalDistSetBuilder.VNAME_C;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_ZAMS;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_P;
 		var2 = OEMarginalDistSetBuilder.VNAME_C;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_P;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		var1 = OEMarginalDistSetBuilder.VNAME_C;
 		var2 = OEMarginalDistSetBuilder.VNAME_ZMU;
 
-		make_2d_pdf (
+		make_2d_pdf_etas (
 			"ETAS PDF for " + var1 + " vs " + var2,
 			"E " + var1 + "/" + var2,
 			var1,
 			var2,
-			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC
+			etas_dist_set, OEMarginalDistSetBuilder.DNAME_SEQ_SPEC, f_etas_active
 		);
 
 		// Add to the view
@@ -2920,10 +3407,14 @@ public class OEGUIView extends OEGUIComponent {
 		OEtasIntegratedIntensityFile ii_file = gui_model.get_etas_ii_file();
 
 		if (ii_file == null) {
-			System.out.println ("@@@@@ Exit: OEGUIView.plotEtasNumGraphs: Integrated intensity function not available");
+			if (gui_top.get_trace_events()) {
+				System.out.println ("@@@@@ Exit: OEGUIView.plotEtasNumGraphs: Integrated intensity function not available");
+			}
 			removeEtasNumGraphs();
 			return;
 		}
+
+		boolean f_etas_active = gui_model.get_f_etas_active_custom();
 
 		// Allocate a new component, or remove all the tabs from an existing component
 
@@ -2949,7 +3440,8 @@ public class OEGUIView extends OEGUIComponent {
 			true,										// f_cum
 			false,										// f_gen
 			true,										// f_seq
-			false										// f_bay
+			false,										// f_bay
+			false										// f_act
 		);
 
 		// Make cumulative number and all models v time
@@ -2962,7 +3454,8 @@ public class OEGUIView extends OEGUIComponent {
 			true,										// f_cum
 			true,										// f_gen
 			true,										// f_seq
-			true										// f_bay
+			true,										// f_bay
+			f_etas_active								// f_act
 		);
 
 		// Make sequence specific v transformed time
@@ -2975,7 +3468,8 @@ public class OEGUIView extends OEGUIComponent {
 			true,											// f_diag
 			false,											// f_gen
 			true,											// f_seq
-			false											// f_bay
+			false,											// f_bay
+			false											// f_act
 		);
 
 		// Make generic v transformed time
@@ -2988,7 +3482,8 @@ public class OEGUIView extends OEGUIComponent {
 		//	true,											// f_diag
 		//	true,											// f_gen
 		//	false,											// f_seq
-		//	false											// f_bay
+		//	false,											// f_bay
+		//	false											// f_act
 		//);
 
 		// Make Bayesian v transformed time
@@ -3001,20 +3496,38 @@ public class OEGUIView extends OEGUIComponent {
 		//	true,											// f_diag
 		//	false,											// f_gen
 		//	false,											// f_seq
-		//	true											// f_bay
+		//	true,											// f_bay
+		//	false											// f_act
 		//);
+
+		// Make active v transformed time
+
+		//if (f_etas_active) {
+		//	make_etas_num_v_transformed_time (
+		//		"ETAS Custom Number v Intensity",				// title
+		//		"E Custom T.Time",								// tab_text
+		//		ii_file,										// ii_file
+		//		OEtasIntegratedIntensityFile.IIRANGE_BORDERED,	// ii_range
+		//		true,											// f_diag
+		//		false,											// f_gen
+		//		false,											// f_seq
+		//		false,											// f_bay
+		//		true											// f_act
+		//	);
+		//}
 
 		// Make all models v transformed time
 
 		make_etas_num_v_transformed_time (
-			"ETAS Number v Intensity",				// title
-			"E Transformed Time",									// tab_text
+			"ETAS Number v Intensity",						// title
+			"E Transformed Time",							// tab_text
 			ii_file,										// ii_file
 			OEtasIntegratedIntensityFile.IIRANGE_BORDERED,	// ii_range
 			true,											// f_diag
 			true,											// f_gen
 			true,											// f_seq
-			true											// f_bay
+			true,											// f_bay
+			f_etas_active									// f_act
 		);
 
 		// Add to the view
@@ -3054,6 +3567,14 @@ public class OEGUIView extends OEGUIComponent {
 		double[] args = ii_file.get_var_values (ii_range, arg_var, arg_model);
 		double[] vals = ii_file.get_var_values (ii_range, val_var, val_model);
 
+		// Make stairstep function if plotting cumulative number
+
+		if (val_var == OEtasIntegratedIntensityFile.IIVAR_CUM_NUM && args.length > 1) {
+			double darg = (args[args.length - 1] - args[0]) / 1000.0;
+			double dval = 0.5;
+			return func_from_args_vals_stairstep (args, vals, name, darg, dval);
+		}
+
 		// Make the function
 
 		return func_from_args_vals (args, vals, name);
@@ -3072,6 +3593,8 @@ public class OEGUIView extends OEGUIComponent {
 	//  f_gen = True to include generic model.
 	//  f_seq = True to include sequence specific model.
 	//  f_bay = True to include Bayesian model.
+	//  f_act = True to include active model.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 
 	private void make_etas_num_v_time (
 		String title,
@@ -3081,8 +3604,9 @@ public class OEGUIView extends OEGUIComponent {
 		boolean f_cum,
 		boolean f_gen,
 		boolean f_seq,
-		boolean f_bay
-	) {
+		boolean f_bay,
+		boolean f_act
+	) throws GUIEDTException {
 		// List of functions and characteristics
 		
 		//List<PlotElement> funcs = new ArrayList<PlotElement>();
@@ -3193,6 +3717,32 @@ public class OEGUIView extends OEGUIComponent {
 			}
 		}
 
+		// Active
+
+		if (f_act) {
+
+			double final_val = ii_file.get_final_var_value (
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,
+				OEtasIntegratedIntensityFile.IIMODEL_ACTIVE
+			);
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_T_DAY,			// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_ACTIVE,		// val_model
+				"Custom: " + SimpleUtils.round_double_via_string ("%.3e", final_val)	// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, active_color));
+			}
+		}
+
 		// If we got at least one function ...
 
 		if (funcs.size() > 0) {
@@ -3253,6 +3803,8 @@ public class OEGUIView extends OEGUIComponent {
 	//  f_gen = True to include generic model.
 	//  f_seq = True to include sequence specific model.
 	//  f_bay = True to include Bayesian model.
+	//  f_act = True to include active model.
+	// Note: Throws GUIEDTException because it calls JTabbedPane.addTab.
 
 	private void make_etas_num_v_transformed_time (
 		String title,
@@ -3262,8 +3814,9 @@ public class OEGUIView extends OEGUIComponent {
 		boolean f_diag,
 		boolean f_gen,
 		boolean f_seq,
-		boolean f_bay
-	) {
+		boolean f_bay,
+		boolean f_act
+	) throws GUIEDTException {
 		// List of functions and characteristics
 		
 		//List<PlotElement> funcs = new ArrayList<PlotElement>();
@@ -3327,6 +3880,26 @@ public class OEGUIView extends OEGUIComponent {
 			if (func != null) {
 				funcs.add (func);
 				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, bayesian_color));
+			}
+		}
+
+		// Active
+
+		if (f_act) {
+
+			ArbitrarilyDiscretizedFunc func = func_from_ii_file (
+				ii_file,
+				ii_range,
+				OEtasIntegratedIntensityFile.IIVAR_CUM_INTEGRAL,	// arg_var
+				OEtasIntegratedIntensityFile.IIMODEL_ACTIVE,		// arg_model
+				OEtasIntegratedIntensityFile.IIVAR_CUM_NUM,			// val_var
+				OEtasIntegratedIntensityFile.IIMODEL_COMMON,		// val_model
+				"Custom"											// name
+			);
+
+			if (func != null) {
+				funcs.add (func);
+				chars.add (new PlotCurveCharacterstics (PlotLineType.SOLID, 3f, active_color));
 			}
 		}
 
@@ -3680,7 +4253,7 @@ public class OEGUIView extends OEGUIComponent {
 			if (gui_model.get_isSeqSpecSelected()) {
 				selected_tab = aft_forecasts.size();
 			}
-			aft_names.add("RJ SeqSpecc");
+			aft_names.add("RJ SeqSpec");
 			aft_pmcodes.add(ForecastResults.PMCODE_SEQ_SPEC);
 			aft_forecasts.add(gui_model.get_seqSpecJSON());
 		}

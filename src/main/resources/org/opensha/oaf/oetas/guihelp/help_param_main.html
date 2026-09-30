@@ -1,0 +1,85 @@
+<html>
+    <head>
+        <title>Aftershock Parameters Panel</title>
+    </head>
+    <body>
+        <h2>Aftershock Parameters Panel</h2>
+        <p>
+            Use the aftershock parameters panel to adjust the parameters that are used
+            to compute forecasts.
+            After setting parameters, you can fit the model parameters and compute forecasts.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>RJ Parameers</b></p>
+        <p>
+            Opens a sub-panel that lets you select parameters for Reasenberg-Jones forecasts.
+            These include parameter ranges for the RJ search grid.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Common Parameers</b></p>
+        <p>
+            Opens a sub-panel that lets you select parameters that are common to both RJ and ETAS.
+            These let you adjust the magnitude of completeness, b-value, fitting interval,
+            and forecast magnitude ranges.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS Forecasts</b></p>
+        <p>
+            This drop-down list controls the use of ETAS. It offers the following choices.
+        </p>
+        <ul>
+            <li>
+                <i>Auto</i> - Lets the system decide whether or not to compute an ETAS forecast.<br>&nbsp;
+            </li>
+            <li>
+                <i>Enable</i> - Forces the system to compute an ETAS forecast.<br>&nbsp;
+            </li>
+            <li>
+                <i>Disable</i> - Tells the system not to compute an ETAS forecast.
+                Only RJ forecasts will be computed.<br>&nbsp;
+            </li>
+            <li>
+                <i>Enable (Fit Only)</i> - Tells the system to perform ETAS parameter fitting,
+                but not compute an ETAS forecast.
+                ETAS forecasts can take some time to compute because they require running a large
+                number of simulations. So, you may want to select this option if you are only
+                interested in viewing the distribution of ETAS parameters.
+                Note that this option cannot be sent to the OAF server.
+            </li>
+        </ul>
+        <p>
+            The system always computes RJ forecasts, regardless of whether or not it is
+            also computing an ETAS forecast.
+        </p>
+        <p>
+            The drop-down is disabled if the GUI is configured to not support ETAS.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS Parameers</b></p>
+        <p>
+            Opens a sub-panel that lets you select parameters for ETAS forecasts.
+            These include parameter ranges for the ETAS search grid.
+        </p>
+        <p>
+            The button is disabled if the GUI is configured to not support ETAS.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>ETAS Options</b></p>
+        <p>
+            Opens a sub-panel that lets you select various options for ETAS forecasts.
+            These include the ETAS model (Bayesian, sequence-specific, generic),
+            the Bayesian prior, and the values of b and alpha.
+        </p>
+        <p>
+            The button is disabled if the GUI is configured to not support ETAS.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Aftershock Params and Forecast</b></p>
+        <p>
+            When you click this button, the GUI performs parameter fitting and then
+            computes forecasts.
+            The results are displayed in the right-hand side of the GUI
+            in <a href="help_view_params_forecast.html">several windows</a>.
+        </p>
+    </body>
+</html>

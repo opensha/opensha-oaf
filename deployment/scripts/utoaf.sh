@@ -94,6 +94,10 @@ let "count_match = 0"
 let "count_error = 0"
 let "count_unchecked = 0"
 
+# A delay time, in seconds, inserted at the start of each test (to avoid rate limits)
+
+delaytime=0
+
 
 
 
@@ -159,6 +163,12 @@ runut () {
     let "n += 1"
     let "testtime += HOUR_MILLIS"
     let "count_total += 1"
+
+    # Delay if desired
+
+    if [ "$delaytime" -gt 0 ]; then
+        sleep "$delaytime"
+    fi
 
     # File names: Reference and Current
 
@@ -249,6 +259,12 @@ rundbut () {
     let "n += 1"
     let "testtime += HOUR_MILLIS"
     let "count_total += 1"
+
+    # Delay if desired
+
+    if [ "$delaytime" -gt 0 ]; then
+        sleep "$delaytime"
+    fi
 
     # File names: Reference and Current
 

@@ -178,10 +178,10 @@ public class SphRegionWorld extends SphRegion {
 	@Override
 	public void get_display_params (Map<String, Object> userParamMap) {
 		userParamMap.put ("regionType", "world");
-		userParamMap.put ("regionSouthLat", min_lat);
-		userParamMap.put ("regionNorthLat", max_lat);
-		userParamMap.put ("regionWestLon", min_lon);
-		userParamMap.put ("regionEastLon", max_lon);
+		userParamMap.put ("regionMinLat", min_lat);
+		userParamMap.put ("regionMaxLat", max_lat);
+		userParamMap.put ("regionMinLon", min_lon);
+		userParamMap.put ("regionMaxLon", max_lon);
 		return;
 	}
 

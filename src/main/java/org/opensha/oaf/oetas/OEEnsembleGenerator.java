@@ -8,6 +8,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.opensha.oaf.util.AutoExecutorService;
@@ -92,6 +93,20 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 
 
+	//----- Random number generator option -----
+
+	// Random generator option, see OECatalogGenerator.MEAR_XXXXX.
+	// Values other than MEAR_NORMAL are used only for testing.
+
+	private int mear_opt;
+
+	// Map holding per-thread random generators, if not using MEAR_NORMAL.
+
+	private ConcurrentHashMap<Integer, OERandomGenerator> mear_map;
+
+
+
+
 	//----- Construction -----
 
 
@@ -115,6 +130,9 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 	public OEEnsembleGenerator () {
 		ensemble_params = null;
 		status_msg = PMFMT_NONE;
+
+		mear_opt = OECatalogGenerator.MEAR_NORMAL;
+		mear_map = null;
 	}
 
 
@@ -138,7 +156,17 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 
 		// Get the random number generator
 
-		OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+		//OERandomGenerator rangen = OERandomGenerator.get_thread_rangen();
+		OERandomGenerator rangen;
+		if (mear_opt == OECatalogGenerator.MEAR_NORMAL) {
+			rangen = OERandomGenerator.get_thread_rangen();
+		} else {
+			rangen = mear_map.get (thread_number);
+			if (rangen == null) {
+				rangen = OECatalogGenerator.make_early_as_rangen (mear_opt);
+				mear_map.put (thread_number, rangen);
+			}
+		}
 
 		// Create a seeder for our initializer, which we re-use for each catalog
 
@@ -428,6 +456,21 @@ public class OEEnsembleGenerator implements SimpleThreadTarget {
 		}
 
 		return ncat_gen;
+	}
+
+
+
+
+	// Set the random number generator option.
+
+	public void set_mear_opt (int mear_opt) {
+		this.mear_opt = mear_opt;
+		if (mear_opt == OECatalogGenerator.MEAR_NORMAL) {
+			this.mear_map = null;
+		} else {
+			this.mear_map = new ConcurrentHashMap<Integer, OERandomGenerator>();
+		}
+		return;
 	}
 
 

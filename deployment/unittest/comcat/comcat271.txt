@@ -13,6 +13,7 @@ description = The 1989 Loma Prieta, California Earthquake
 ids = ,nc216859,nclomaprie,usp00040t8,choy19891018000415,gcmtm101889a,ushis4150,gcmt19891018000415,iscgem389808,atlas19891018000415,
 net = nc
 code = 216859
+magtype = mh
 
 http_status = 200
 Fetching event list

@@ -174,7 +174,7 @@
 #
 # config_packgui - Configure and package the production GUI.
 #     After the 'config_packgui' keyword comes the following parameters:
-#       GUIDATE  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SSLOPT
+#       GUIDATE  SRVIP1  REPSET1  SRVIP2  REPSET2  DBNAME  DBUSER  DBPASS  SSLOPT  ACTCFG
 #     Where:
 #       GUIDATE = GUI date in form YYYY_MM_DD (or tag).
 #       SRVIP1 = Server IP address for server #1.
@@ -185,6 +185,7 @@
 #       DBUSER = MongoDB username.
 #       DBPASS = MongoDB password.
 #       SSLOPT = SSL option string.
+#       ACTCFG = "usa" or "dev" to select the action configuration, "none" to leave it unchnaged.
 #     If any of these options (except GUIDATE) contains an ampersand, then the ampersand must be escaped with a backslash.
 #     It is assumed that DBNAME is both the data storage database and authentication database.
 #     For a single-server configuration, enter the same IP address and replica set name for both server #1 and server #2.
@@ -216,14 +217,26 @@
 #          parameters for the class.
 #
 # runat - Run a class in the org.opensha.oaf package, using the compiled-in configuration, at a given time.
-#         After the 'run' keyword comes the application time (as either number of milliseconds
+#         After the 'runat' keyword comes the application time (as either number of milliseconds
 #         since the epoch, or ISO-8601 format), then the name of the class (without the
 #         'org.opensha.oaf.' prefix), followed by any command-line parameters for the class.
 #
 # runtestat - Run a class in the org.opensha.oaf package, using the compiled-in configuration, in test mode at a given time.
-#             After the 'run' keyword comes the test mode time (as either number of milliseconds
+#             After the 'runtestat' keyword comes the test mode time (as either number of milliseconds
 #             since the epoch, or ISO-8601 format), then the name of the class (without the
 #             'org.opensha.oaf.' prefix), followed by any command-line parameters for the class.
+#
+# run_mem - Like 'run' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runcfg_mem - Like 'runcfg' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runaafs_mem - Like 'runaafs' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runany_mem - Like 'runany' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runat_mem - Like 'runat' except the first parameter is the amount of memory to use for Java, in GB.
+#
+# runtestat_mem - Like 'runtestat' except the first parameter is the amount of memory to use for Java, in GB.
 
 
 
@@ -432,8 +445,9 @@ isfilewriteok () {
 # ${3} thru ${25} = Server parameters, see definitions below.
 # Note that ${22} is one of:
 #  "none" if forecasts are not sent to PDL.
-#  "dev" if forecasts are sent to PDL-Development.
-#  the name of a key file (which must be in /opt/aafs/key), if forecasts are sent to PDL-Production.
+#  "dev" if unsigned forecasts are sent to PDL-Development.
+#  the name of a key file (which must be in /opt/aafs/key), if signed forecasts are sent to PDL-Production.
+#  "dev:" followed by the name of a key file (which must be in /opt/aafs/key), if signed forecasts are sent to PDL-Development.
 
 copysubsrv () {
     if [ -f "${2}" ]; then
@@ -1023,11 +1037,21 @@ case "$1" in
             DBUSER="${8}"
             DBPASS="${9}"
             SSLOPT="${10}"
+            ACTCFG="${11}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json    \
             "rs0" "usgs" "usgs" "usgs" "usgs"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$SRVIP1" "$SRVIP2" "test" "1" "none" "auto" "$SSLOPT" "$SSLOPT"
+            if [ "$ACTCFG" == "usa" ]; then
+                copyover opensha-oaf/deployment/scripts/prodcfg/ActionConfig_usa.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ActionConfig.json
+            elif [ "$ACTCFG" == "dev" ]; then
+                copyover opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ActionConfig.json
+            elif [ "$ACTCFG" == "none" ]; then
+                :
+            else
+                echo "Warning: Ignoring unknown action configuration"
+            fi
             cd opensha-oaf/build/libs
             jar -cfe AftershockGUI-prod-$2.jar org.opensha.oaf.rj.gui.RJGUITop -C gtmp .
             cd ../../..
@@ -1057,11 +1081,21 @@ case "$1" in
             DBUSER="${8}"
             DBPASS="${9}"
             SSLOPT="${10}"
+            ACTCFG="${11}"
             copysubsrv opensha-oaf/deployment/scripts/prodcfg/ServerConfig_sub.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ServerConfig.json    \
             "rs0" "usgs" "usgs" "usgs" "usgs"    \
             "$REPSET1" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$REPSET2" "$DBUSER" "$DBNAME" "$DBPASS" "$DBNAME"    \
             "$SRVIP1" "$SRVIP2" "test" "1" "none" "auto" "$SSLOPT" "$SSLOPT"
+            if [ "$ACTCFG" == "usa" ]; then
+                copyover opensha-oaf/deployment/scripts/prodcfg/ActionConfig_usa.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ActionConfig.json
+            elif [ "$ACTCFG" == "dev" ]; then
+                copyover opensha-oaf/src/main/resources/org/opensha/oaf/aafs/ActionConfig.json opensha-oaf/build/libs/gtmp/org/opensha/oaf/aafs/ActionConfig.json
+            elif [ "$ACTCFG" == "none" ]; then
+                :
+            else
+                echo "Warning: Ignoring unknown action configuration"
+            fi
             cd opensha-oaf/build/libs
             jar -cfe AftershockETAS_GUI-prod-$2.jar org.opensha.oaf.oetas.gui.OEGUITop -C gtmp .
             cd ../../..
@@ -1128,6 +1162,50 @@ case "$1" in
         JCLASS="org.opensha.oaf.$3"
         shift 3
         java "-Dtesttime=$TESTTIME" -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    run_mem)
+        JMEMGB="$2"
+        JCLASS="org.opensha.oaf.$3"
+        shift 3
+        java -Xmx${JMEMGB}G -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runcfg_mem)
+        JMEMGB="$2"
+        JCLASS="org.opensha.oaf.$3"
+        shift 3
+        java -Xmx${JMEMGB}G -Doafcfg=./oafcfg -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runaafs_mem)
+        JMEMGB="$2"
+        JCLASS="org.opensha.oaf.$3"
+        shift 3
+        java -Xmx${JMEMGB}G -Doafcfg=/opt/aafs/oafcfg -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runany_mem)
+        JMEMGB="$2"
+        JCLASS="$3"
+        shift 3
+        java -Xmx${JMEMGB}G -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runat_mem)
+        JMEMGB="$2"
+        APPTIME="$3"
+        JCLASS="org.opensha.oaf.$4"
+        shift 4
+        java -Xmx${JMEMGB}G "-Dapptime=$APPTIME" -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
+        ;;
+
+    runtestat_mem)
+        JMEMGB="$2"
+        TESTTIME="$3"
+        JCLASS="org.opensha.oaf.$4"
+        shift 4
+        java -Xmx${JMEMGB}G "-Dtesttime=$TESTTIME" -cp opensha-oaf/build/libs/oefjava.jar:opensha-oaf/lib/ProductClient.jar $JCLASS "$@"
         ;;
 
     help)
@@ -1200,9 +1278,9 @@ case "$1" in
         echo "Configure and package the production GUI:"
         echo "  boaf.sh config_packgui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SSLOPT"
         echo "Configure and package the production ETAS GUI:"
-        echo "  boaf.sh config_pack_etas_gui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SSLOPT"
+        echo "  boaf.sh config_pack_etas_gui GUIDATE SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SSLOPT ACTCFG"
         echo "Create and save a server configuration file for the production GUI:"
-        echo "  boaf.sh config_file_packgui FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SSLOPT"
+        echo "  boaf.sh config_file_packgui FILENAME SRVIP1 REPSET1 SRVIP2 REPSET2 DBNAME DBUSER DBPASS SSLOPT ACTCFG"
         echo "Run a class in the org.opensha.oaf package, using the compiled-in configuration:"
         echo "  boaf.sh run CLASSNAME [PARAMETER...]"
         echo "Run a class in the org.opensha.oaf package, reading configuration from ./oafcfg:"
@@ -1215,6 +1293,18 @@ case "$1" in
         echo "  boaf.sh runat apptime CLASSNAME [PARAMETER...]"
         echo "Run a class in the org.opensha.oaf package, using the compiled-in configuration, in test mode at a given time:"
         echo "  boaf.sh runtestat testtime CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, using the compiled-in configuration:"
+        echo "  boaf.sh run_mem JAVAGB CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, reading configuration from ./oafcfg:"
+        echo "  boaf.sh runcfg_mem JAVAGB CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, reading configuration from /opt/aafs/oafcfg:"
+        echo "  boaf.sh runaafs_mem JAVAGB CLASSNAME [PARAMETER...]"
+        echo "Run a class in any package, in specified number of GB, using the compiled-in configuration:"
+        echo "  boaf.sh runany_mem JAVAGB FULLCLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, using the compiled-in configuration, at a given time:"
+        echo "  boaf.sh runat_mem JAVAGB apptime CLASSNAME [PARAMETER...]"
+        echo "Run a class in the org.opensha.oaf package, in specified number of GB, using the compiled-in configuration, in test mode at a given time:"
+        echo "  boaf.sh runtestat_mem JAVAGB testtime CLASSNAME [PARAMETER...]"
         ;;
 
     *)

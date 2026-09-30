@@ -253,6 +253,17 @@ public class OEMixedRNPCConfig {
 
 
 
+	// Get a version associated with the parameters.
+	// Note: This function is used in validation testing.
+	// TODO: Eventually this should come from the parameter file.
+
+	public final String get_params_version () {
+		return OEMixedRNPCParams.get_embedded_csv_version();
+	}
+
+
+
+
 	//----- Parameter modification -----
 
 

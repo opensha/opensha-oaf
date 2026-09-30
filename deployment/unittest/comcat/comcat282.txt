@@ -15,6 +15,7 @@ description = 2011 Great Tohoku Earthquake, Japan
 ids = ,usc0001xgp,official20110311054624120_30,usp000hvnu,choy20110311054623,duputel201103110546a,atlas20110311054624,iscgem16461282,
 net = official
 code = 20110311054624120_30
+magtype = mww
 
 http_status = 200
 Fetching event list

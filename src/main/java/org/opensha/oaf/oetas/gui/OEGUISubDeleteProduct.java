@@ -361,7 +361,8 @@ public class OEGUISubDeleteProduct extends OEGUIListener {
 	private GUIParameterListParameter init_deleteProductEditParam () throws GUIEDTException {
 		deleteProductList = new ParameterList();
 		deleteProductEditParam = new GUIParameterListParameter("Delete Product", deleteProductList, "Delete OAF Product...",
-							"Delete OAF Product", "Delete Product", null, null, false, gui_top.get_trace_events());
+							"Delete OAF Product", "Delete Product", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_mtool_delete_product.html"));
 		deleteProductEditParam.setInfo("Delete OAF and event-sequence products from PDL");
 		register_param (deleteProductEditParam, "deleteProductEditParam", PARMGRP_DELPROD_EDIT);
 

@@ -336,6 +336,15 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 	}
 
 
+	// The help listener, or null if none.
+
+	protected GUIHelpListener helpListener = null;
+
+	public GUIHelpListener getHelpListener () {
+		return helpListener;
+	}
+
+
 	// The termination code, typically indicating why the dialog was closed.
 
 	protected int dialogTermCode = GUIDialogParameter.TERMCODE_NONE;
@@ -422,6 +431,43 @@ public class GUIParameterListParameter extends AbstractParameter<ParameterList> 
 		buttonForeground = null;
 		okButtonForeground = null;
 		cancelButtonForeground = null;
+		helpListener = null;
+		//setting the independent Param List for this parameter
+		setIndependentParameters(paramList);
+	}
+
+
+	/**
+	 * No constraints specified, all values allowed. Sets the name and value.
+	 *
+	 * @param  name   Name of the parameter
+	 * @param  paramList  ParameterList  object
+	 * @param  the_buttonText  Text to appear on the button, null or empty uses name.
+	 * @param  the_dialogTitleText  Text to appear on dialog title, null uses name.
+	 * @param  the_listTitleText  Text to appear at top of list, null uses "Set "+name.
+	 * @param  the_okButtonText  Text to appear on dialog OK button, null omits the button, empty uses "Update "+name.
+	 * @param  the_cancelButtonText  Text to appear on dialog CANCEL button, null omits the button, empty uses "Cancel".
+	 * @param  the_modalDialog  True to use a modal dialog (the normal usage).
+	 * @param  the_enableTrace  True to emit trace messages for debugging.
+	 * @param  the_enableTrace  True to emit trace messages for debugging.
+	 * @param  the_helpListener  Listener to receive help requests, or null if none..
+	 */
+	public GUIParameterListParameter(String name, ParameterList paramList, String the_buttonText,
+			String the_dialogTitleText, String the_listTitleText, String the_okButtonText,
+			String the_cancelButtonText, boolean the_modalDialog, boolean the_enableTrace,
+			GUIHelpListener the_helpListener){
+		super(name,null,null,paramList);
+		buttonText = the_buttonText;
+		dialogTitleText = the_dialogTitleText;
+		listTitleText = the_listTitleText;
+		okButtonText = the_okButtonText;
+		cancelButtonText = the_cancelButtonText;
+		modalDialog = the_modalDialog;
+		enableTrace = the_enableTrace;
+		buttonForeground = null;
+		okButtonForeground = null;
+		cancelButtonForeground = null;
+		helpListener = the_helpListener;
 		//setting the independent Param List for this parameter
 		setIndependentParameters(paramList);
 	}

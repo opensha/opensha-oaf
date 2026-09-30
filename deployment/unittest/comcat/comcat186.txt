@@ -13,11 +13,13 @@ description = The 2014 South Napa, California Earthquake
 ids = ,at00nat3ek,nc72282711,usb000s5tp,iscgem610572079,atlas20140824102044,
 net = nc
 code = 72282711
+magtype = mw
 
 http_status = 200
 EI Map: code = 72282711
 EI Map: description = The 2014 South Napa, California Earthquake
 EI Map: ids = ,at00nat3ek,nc72282711,usb000s5tp,iscgem610572079,atlas20140824102044,
+EI Map: magtype = mw
 EI Map: net = nc
 ID List: nc72282711
 ID List: at00nat3ek

@@ -295,6 +295,14 @@ public class OEDisc2ExtFit {
 
 	private boolean f_intervals;
 
+	// Coefficient for intervals to act as productivity sources for later intervals.
+
+	private double c_cross_intervals;
+
+	// Coefficient for intervals to act as productivity sources for themselves.
+
+	private double c_self_intervals;
+
 	// True to calculate data needed for log-likelihood.
 
 	private boolean f_likelihood;
@@ -2090,6 +2098,227 @@ public class OEDisc2ExtFit {
 		}
 
 
+		// Function to apply the matrix.
+		// Parameters:
+		//  y1 = Target vector #1, length = interval_count.
+		//  y2 = Target vector #2, length = interval_count.
+		//  z1 = Target scalar #1, length = 1.
+		//  z2 = Target scalar #2, length = 1.
+		//  x1 = Source vector #1, length = interval_count.
+		//  x2 = Source vector #2, length = interval_count.
+		//  o1 = Source scalar offset #1, length = 1.
+		//  o2 = Source scalar offset #2, length = 1.
+		//  dy = Target scaling vector for y, length = interval_count.
+		//  dz = Target scaling vector for z, length = interval_count.
+		//  s = Scale factor.
+		//  cyy = Extra coefficient for y-y off-diagonal (interval-interval interaction) matrix.
+		//  cyd = Extra coefficient for y diagonal (interval self interaction) matrix.
+		// Performs the operations (with m denoting omat_int_targ_int_src and v denoting omat_self_int_src):
+		//   y1[i] = (SUM(m[i][j] * y1[j]) * dy[i] + x1[i]) * s * (1 + v[i] * dy[i] * s);
+		//   y2[i] = (SUM(m[i][j] * y2[j]) * dy[i] + x2[i]) * s * (1 + v[i] * dy[i] * s);
+		// where the sum is over j satisfying 0 <= j < m[i].length, for i satisfying 0 <= i <= m.length.
+		// Because the formulas are a recurrence, they must be evaluated sequentially in increasing i.
+		//   z1[0] = SUM((SUM(m[i][j] * y1[j]) + y1[i] * v[i]) * dz[i]) + o1[0]
+		//   z2[0] = SUM((SUM(m[i][j] * y2[j]) + y2[i] * v[i]) * dz[i]) + o2[0]
+		// where the inner sum is over j satisfying 0 <= j < m[i].length, and the outer sum is
+		// over i satisfying 0 <= i <= m.length.  Because the formulas refer to y1[i] and y2[i],
+		// the y values must be computed first.
+
+		public final void apply_omat_int_targ_int_src (
+				final double[] y1,
+				final double[] y2,
+				final double[] z1,
+				final double[] z2,
+				final double[] x1,
+				final double[] x2,
+				final double[] o1,
+				final double[] o2,
+				final double[] dy,
+				final double[] dz,
+				final double s,
+				final double cyy,
+				final double cyd) {
+
+			// Zero-matrix case
+
+			if (omat_int_targ_int_src == null) {
+				final int ii_top = history.interval_count;
+				for (int ii = 0; ii < ii_top; ++ii) {
+					y1[ii] = x1[ii] * s;
+					y2[ii] = x2[ii] * s;
+				}
+				z1[0] = o1[0];
+				z2[0] = o2[0];
+				return;
+			}
+
+			// Non-zero matrix
+
+			final int i_top = omat_int_targ_int_src.length;
+
+			// Accumulators across all targets for scalar output
+
+			double total1 = 0.0;
+			double total2 = 0.0;
+
+			// For each target...
+
+			for (int i = 0; i < i_top; ++i) {
+
+				// Propagate from prior outputs
+
+				double sum1 = 0.0;
+				double sum2 = 0.0;
+
+				final double[] row = omat_int_targ_int_src[i];
+				final int j_top = row.length;
+
+				for (int j = 0; j < j_top; ++j) {
+					sum1 += (row[j] * y1[j]);
+					sum2 += (row[j] * y2[j]);
+				}
+
+				// Vector output
+
+				final double self = omat_self_int_src[i];
+
+				y1[i] = (sum1 * dy[i] * cyy + x1[i]) * s * (self * dy[i] * cyd * s + 1.0);
+				y2[i] = (sum2 * dy[i] * cyy + x2[i]) * s * (self * dy[i] * cyd * s + 1.0);
+
+				// Scalar output
+
+				total1 += ((y1[i] * self + sum1) * dz[i]);
+				total2 += ((y2[i] * self + sum2) * dz[i]);
+			}
+
+			// Total scalar output
+
+			z1[0] = total1 + o1[0];
+			z2[0] = total2 + o2[0];
+			return;
+		}
+
+
+		// Function to apply the matrix.
+		// Parameters:
+		//  y1 = Target vector #1, length = interval_count.
+		//  y2 = Target vector #2, length = interval_count.
+		//  y3 = Target vector #3, length = interval_count.
+		//  z1 = Target scalar #1, length = 1.
+		//  z2 = Target scalar #2, length = 1.
+		//  z3 = Target scalar #3, length = 1.
+		//  x1 = Source vector #1, length = interval_count.
+		//  x2 = Source vector #2, length = interval_count.
+		//  x3 = Source vector #3, length = interval_count.
+		//  o1 = Source scalar offset #1, length = 1.
+		//  o2 = Source scalar offset #2, length = 1.
+		//  o3 = Source scalar offset #3, length = 1.
+		//  dy = Target scaling vector for y, length = interval_count.
+		//  dz = Target scaling vector for z, length = interval_count.
+		//  s = Scale factor.
+		//  cyy = Extra coefficient for y-y off-diagonal (interval-interval interaction) matrix.
+		//  cyd = Extra coefficient for y diagonal (interval self interaction) matrix.
+		// Performs the operations (with m denoting omat_int_targ_int_src and v denoting omat_self_int_src):
+		//   y1[i] = (SUM(m[i][j] * y1[j]) * dy[i] + x1[i]) * s * (1 + v[i] * dy[i] * s);
+		//   y2[i] = (SUM(m[i][j] * y2[j]) * dy[i] + x2[i]) * s * (1 + v[i] * dy[i] * s);
+		//   y3[i] = (SUM(m[i][j] * y3[j]) * dy[i] + x3[i]) * s * (1 + v[i] * dy[i] * s);
+		// where the sum is over j satisfying 0 <= j < m[i].length, for i satisfying 0 <= i <= m.length.
+		// Because the formulas are a recurrence, they must be evaluated sequentially in increasing i.
+		//   z1[0] = SUM((SUM(m[i][j] * y1[j]) + y1[i] * v[i]) * dz[i]) + o1[0]
+		//   z2[0] = SUM((SUM(m[i][j] * y2[j]) + y2[i] * v[i]) * dz[i]) + o2[0]
+		//   z3[0] = SUM((SUM(m[i][j] * y3[j]) + y3[i] * v[i]) * dz[i]) + o3[0]
+		// where the inner sum is over j satisfying 0 <= j < m[i].length, and the outer sum is
+		// over i satisfying 0 <= i <= m.length.  Because the formulas refer to y1[i] and y2[i] and y3[i],
+		// the y values must be computed first.
+
+		public final void apply_omat_int_targ_int_src (
+				final double[] y1,
+				final double[] y2,
+				final double[] y3,
+				final double[] z1,
+				final double[] z2,
+				final double[] z3,
+				final double[] x1,
+				final double[] x2,
+				final double[] x3,
+				final double[] o1,
+				final double[] o2,
+				final double[] o3,
+				final double[] dy,
+				final double[] dz,
+				final double s,
+				final double cyy,
+				final double cyd) {
+
+			// Zero-matrix case
+
+			if (omat_int_targ_int_src == null) {
+				final int ii_top = history.interval_count;
+				for (int ii = 0; ii < ii_top; ++ii) {
+					y1[ii] = x1[ii] * s;
+					y2[ii] = x2[ii] * s;
+					y3[ii] = x3[ii] * s;
+				}
+				z1[0] = o1[0];
+				z2[0] = o2[0];
+				z3[0] = o3[0];
+				return;
+			}
+
+			// Non-zero matrix
+
+			final int i_top = omat_int_targ_int_src.length;
+
+			// Accumulators across all targets for scalar output
+
+			double total1 = 0.0;
+			double total2 = 0.0;
+			double total3 = 0.0;
+
+			// For each target...
+
+			for (int i = 0; i < i_top; ++i) {
+
+				// Propagate from prior outputs
+
+				double sum1 = 0.0;
+				double sum2 = 0.0;
+				double sum3 = 0.0;
+
+				final double[] row = omat_int_targ_int_src[i];
+				final int j_top = row.length;
+
+				for (int j = 0; j < j_top; ++j) {
+					sum1 += (row[j] * y1[j]);
+					sum2 += (row[j] * y2[j]);
+					sum3 += (row[j] * y3[j]);
+				}
+
+				// Vector output
+
+				final double self = omat_self_int_src[i];
+				final double r = s * (self * dy[i] * cyd * s + 1.0);
+
+				y1[i] = (sum1 * dy[i] * cyy + x1[i]) * r;
+				y2[i] = (sum2 * dy[i] * cyy + x2[i]) * r;
+				y3[i] = (sum3 * dy[i] * cyy + x3[i]) * r;
+
+				// Scalar output
+
+				total1 += ((y1[i] * self + sum1) * dz[i]);
+				total2 += ((y2[i] * self + sum2) * dz[i]);
+				total3 += ((y3[i] * self + sum3) * dz[i]);
+			}
+
+			// Total scalar output
+
+			z1[0] = total1 + o1[0];
+			z2[0] = total2 + o2[0];
+			z3[0] = total3 + o3[0];
+			return;
+		}
+
+
 
 
 		//----- Building -----
@@ -3304,6 +3533,24 @@ public class OEDisc2ExtFit {
 
 			if (f_background) {
 
+				//  pmom.omat.apply_omat_int_targ_int_src (
+				//  	prod_int_targ_all_src,				// final double[] y1
+				//  	prod_main_int_targ_all_src,			// final double[] y2
+				//  	prod_bkgd_int_targ_all_src,			// final double[] y3
+				//  	like_int_targ_all_src,				// final double[] z1
+				//  	like_main_int_targ_all_src,			// final double[] z2
+				//  	like_bkgd_int_targ_all_src,			// final double[] z3
+				//  	pmom.prod_int_targ_rup_src,			// final double[] x1
+				//  	pmom.prod_main_int_targ_rup_src,	// final double[] x2
+				//  	pmom.prod_bkgd_int_targ_rup_src,	// final double[] x3
+				//  	pmom.like_int_targ_rup_src,			// final double[] o1
+				//  	pmom.like_main_int_targ_rup_src,	// final double[] o2
+				//  	pmom.like_bkgd_int_targ_rup_src,	// final double[] o3
+				//  	pmom.mexp.int_part_targ_prod,		// final double[] dy
+				//  	pmom.mexp.int_part_like_unlim,		// final double[] dz
+				//  	ten_aint_q							// final double s
+				//  );
+
 				pmom.omat.apply_omat_int_targ_int_src (
 					prod_int_targ_all_src,				// final double[] y1
 					prod_main_int_targ_all_src,			// final double[] y2
@@ -3319,10 +3566,26 @@ public class OEDisc2ExtFit {
 					pmom.like_bkgd_int_targ_rup_src,	// final double[] o3
 					pmom.mexp.int_part_targ_prod,		// final double[] dy
 					pmom.mexp.int_part_like_unlim,		// final double[] dz
-					ten_aint_q							// final double s
+					ten_aint_q,							// final double s
+					c_cross_intervals,					// final double cyy
+					c_self_intervals					// final double cyd
 				);
 
 			} else {
+
+				//  pmom.omat.apply_omat_int_targ_int_src (
+				//  	prod_int_targ_all_src,				// final double[] y1
+				//  	prod_main_int_targ_all_src,			// final double[] y2
+				//  	like_int_targ_all_src,				// final double[] z1
+				//  	like_main_int_targ_all_src,			// final double[] z2
+				//  	pmom.prod_int_targ_rup_src,			// final double[] x1
+				//  	pmom.prod_main_int_targ_rup_src,	// final double[] x2
+				//  	pmom.like_int_targ_rup_src,			// final double[] o1
+				//  	pmom.like_main_int_targ_rup_src,	// final double[] o2
+				//  	pmom.mexp.int_part_targ_prod,		// final double[] dy
+				//  	pmom.mexp.int_part_like_unlim,		// final double[] dz
+				//  	ten_aint_q							// final double s
+				//  );
 
 				pmom.omat.apply_omat_int_targ_int_src (
 					prod_int_targ_all_src,				// final double[] y1
@@ -3335,7 +3598,9 @@ public class OEDisc2ExtFit {
 					pmom.like_main_int_targ_rup_src,	// final double[] o2
 					pmom.mexp.int_part_targ_prod,		// final double[] dy
 					pmom.mexp.int_part_like_unlim,		// final double[] dz
-					ten_aint_q							// final double s
+					ten_aint_q,							// final double s
+					c_cross_intervals,					// final double cyy
+					c_self_intervals					// final double cyd
 				);
 
 			}
@@ -3970,6 +4235,8 @@ public class OEDisc2ExtFit {
 		history_a_interval_duration = null;
 
 		f_intervals = true;
+		c_cross_intervals = 1.0;
+		c_self_intervals = 1.0;
 		f_likelihood = true;
 		lmr_opt = LMR_OPT_MCT_INFINITY;
 		f_background = true;
@@ -4035,8 +4302,18 @@ public class OEDisc2ExtFit {
 	//  f_likelihood = True to calculate data needed for log-likelihood.
 	//  f_background = 	True to calculate data needed to fit background rate.
 	//  lmr_opt = Option to select magnitude range for log-likelihood calculation (LMR_OPT_XXXX).
+	//  c_cross_intervals = Coefficient for intervals to act as productivity sources for later intervals, defaults to 1.0.
+	//  c_self_intervals = Coefficient for intervals to act as productivity sources for themselves, defaults to 1.0.
 
 	public void dfit_build (OEDisc2History history, OECatalogParamsMags cat_params, boolean f_intervals, boolean f_likelihood, int lmr_opt, boolean f_background) {
+		double my_c_cross_intervals = 1.0;
+		double my_c_self_intervals = 1.0;
+		dfit_build (history, cat_params, f_intervals, f_likelihood, lmr_opt, f_background, my_c_cross_intervals, my_c_self_intervals);
+		return;
+	}
+
+
+	public void dfit_build (OEDisc2History history, OECatalogParamsMags cat_params, boolean f_intervals, boolean f_likelihood, int lmr_opt, boolean f_background, double c_cross_intervals, double c_self_intervals) {
 
 		// Start by clearing
 
@@ -4050,6 +4327,8 @@ public class OEDisc2ExtFit {
 		// Save the configuration
 
 		this.f_intervals = f_intervals;
+		this.c_cross_intervals = c_cross_intervals;
+		this.c_self_intervals = c_self_intervals;
 		this.f_likelihood = f_likelihood;
 		this.lmr_opt = lmr_opt;
 		this.f_background = f_background;
@@ -4242,6 +4521,8 @@ public class OEDisc2ExtFit {
 		}
 
 		result.append ("f_intervals = "            + f_intervals            + "\n");
+		result.append ("c_cross_intervals = "      + c_cross_intervals      + "\n");
+		result.append ("c_self_intervals = "       + c_self_intervals       + "\n");
 		result.append ("f_likelihood = "           + f_likelihood           + "\n");
 		result.append ("lmr_opt = "                + lmr_opt                + "\n");
 		result.append ("f_background = "           + f_background           + "\n");
@@ -4415,6 +4696,8 @@ public class OEDisc2ExtFit {
 			history.get_t_range_end(),
 			group_t_interval_end,
 			f_intervals,
+			c_cross_intervals,
+			c_self_intervals,
 			lmr_opt,
 			f_intensity,
 			like_int_begin,
@@ -4424,6 +4707,15 @@ public class OEDisc2ExtFit {
 		);
 
 		return fit_info;
+	}
+
+
+
+
+	// Get the history.
+
+	public final OEDisc2History get_history () {
+		return history;
 	}
 
 

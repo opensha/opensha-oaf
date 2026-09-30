@@ -1,0 +1,55 @@
+<html>
+    <head>
+        <title>Tool: Compute Max Likelihood b-value</title>
+    </head>
+    <body>
+        <h2>Tool: Compute Max Likelihood b-value</h2>
+        <p>
+            This tool computes an estimated b-value using the maximum likelihood algoritm
+            of Aki (1965, Bull. Earthq. Res. Inst.).
+        </p>
+        <p>
+            Note that this tool is a modal dialog, which means that you must close the tool
+            before you can use any other part of the GUI.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Mc For Sequence</b></p>
+        <p>
+            Use this field to supply an estimated magnitude of completeness for the
+            catalog that has been loaded into the GUI.
+            When you open the tool, this field is initialized to the value of <b>Mc For Sequence</b>
+            in the <b>Common Parameters</b> panel.
+            You can change this value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Magnitude Precision</b></p>
+        <p>
+            Set this field to the estimated precision of the magnitudes in the catalog.
+            A typical value is 0.1.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Compute max likelihood b-value</b></p>
+        <p>
+            Press the button to run the calculation.
+            The computed b-value is placed into the <b>b-value</b> field and into the <b>Select</b> button.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>b-value</b></p>
+        <p>
+            This is a read-only field that displays the computed b-value.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Select</b></p>
+        <p>
+            When you compute a b-value, this button becomes active, and the computed
+            b-value is inserted into the button.
+            Press the button to close the tool and transfer the b-value into the <b>b-value</b>
+            field in the <b>Common Parameters</b> panel.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Cancel</b></p>
+        <p>
+            Press this button to close the tool without choosing a new b-value.
+        </p>
+    </body>
+</html>

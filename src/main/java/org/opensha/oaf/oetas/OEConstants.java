@@ -656,6 +656,14 @@ public class OEConstants {
 
 	public static final boolean DEF_F_INTERVALS = true;
 
+	// Default value of the coefficient for intervals to act as productivity sources for later intervals.
+
+	public static final double DEF_C_CROSS_INTERVALS = 1.0;
+
+	// Default value of the coefficient for intervals to act as productivity sources for themselves.
+
+	public static final double DEF_C_SELF_INTERVALS = 1.0;
+
 
 
 	// Default value of mref, reference and minimum magnitude, for parameter definition.
@@ -896,7 +904,7 @@ public class OEConstants {
 	// The default range of Omori c-value.
 
 	public static OEDiscreteRange def_c_range () {
-		return OEDiscreteRange.makeLog (21, 0.00001, 1.00000);
+		return OEDiscreteRange.makeLog (21, 0.0001, 1.00000);
 	}
 
 	// The default range of Omori p-value.

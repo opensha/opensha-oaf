@@ -186,6 +186,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private static final int PARMGRP_FCTAB_FULL_EXPORT = 907;			// Export button (forecast_data.json)
 	private static final int PARMGRP_FCTAB_NEXT_FC_OPTION = 908;		// Next forecast option
 	private static final int PARMGRP_FCTAB_NEXT_FC_TIME = 909;			// Next forecast time
+	private static final int PARMGRP_FCTAB_HELP = 910;					// Help button
 	
 
 	//----- Parameters within the panel -----
@@ -196,7 +197,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private ButtonParameter exportButton;
 
 	private ButtonParameter init_exportButton () throws GUIEDTException {
-		exportButton = new ButtonParameter("forecast.json", "Export forecast.json only...");
+		exportButton = new ButtonParameter("Export forecast.json", "Export forecast.json only...");
 		exportButton.setInfo ("Export the forecast to a forecast.json file");
 		register_param (exportButton, "exportButton" + my_suffix, PARMGRP_FCTAB_EXPORT);
 		return exportButton;
@@ -208,7 +209,7 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private ButtonParameter exportFullButton;
 
 	private ButtonParameter init_exportFullButton () throws GUIEDTException {
-		exportFullButton = new ButtonParameter("JSON", "Export JSON...");
+		exportFullButton = new ButtonParameter("Export Forecast to File", "Export to JSON...");
 		exportFullButton.setInfo ("Export the forecast to a forecast_data.json file");
 		register_param (exportFullButton, "exportFullButton" + my_suffix, PARMGRP_FCTAB_FULL_EXPORT);
 		return exportFullButton;
@@ -220,9 +221,9 @@ public class OEGUIForecastTable extends OEGUIListener {
 	private ButtonParameter publishButton;
 
 	private ButtonParameter init_publishButton () throws GUIEDTException {
-		String publish_forecast = "Publish Forecast to " + get_pdl_dest() + "...";
+		String publish_forecast = "Send Forecast to " + get_pdl_dest() + "...";
 		//publishButton = new ButtonParameter("USGS PDL", "Publish Forecast");
-		publishButton = new ButtonParameter("USGS PDL", publish_forecast);
+		publishButton = new ButtonParameter("Send Forecast to PDL", publish_forecast);
 		publishButton.setInfo ("Send the forecast to " + get_pdl_dest());
 		register_param (publishButton, "publishButton" + my_suffix, PARMGRP_FCTAB_PUBLISH);
 		return publishButton;
@@ -466,6 +467,18 @@ public class OEGUIForecastTable extends OEGUIListener {
 	}
 
 
+	// Show help; button.
+
+	private ButtonParameter helpButton;
+
+	private ButtonParameter init_helpButton () throws GUIEDTException {
+		helpButton = new ButtonParameter("Show Help", "Help");
+		helpButton.setInfo ("Show help for the forecast table");
+		register_param (helpButton, "helpButton" + my_suffix, PARMGRP_FCTAB_HELP);
+		return helpButton;
+	}
+
+
 
 
 	//--- Parameter container ---
@@ -498,6 +511,10 @@ public class OEGUIForecastTable extends OEGUIListener {
 //		params.addParameter(init_injectableTextButton());
 
 		params.addParameter(init_exportButton());
+
+		if (gui_top.get_provide_help()) {
+			params.addParameter(init_helpButton());
+		}
 
 		// Enable synchronization
 
@@ -1116,8 +1133,9 @@ public class OEGUIForecastTable extends OEGUIListener {
 							// If error, report the exception
 							
 							else {
+								gui_view.view_show_console();
 								System.err.println (pdl_result[1]);
-								JOptionPane.showMessageDialog(my_panel, pdl_result[0], "Error sending product", JOptionPane.ERROR_MESSAGE);
+								JOptionPane.showMessageDialog(my_panel, pdl_result[0] + "\n\nMore information may be available in the Console window.", "Error sending product", JOptionPane.ERROR_MESSAGE);
 							}
 						}
 					};
@@ -1235,6 +1253,16 @@ public class OEGUIForecastTable extends OEGUIListener {
 
 		case PARMGRP_FCTAB_NEXT_FC_TIME: {
 			sync_nextForecastOptionTime();
+		}
+		break;
+
+
+
+
+		//*** Show help
+
+		case PARMGRP_FCTAB_HELP: {
+			gui_top.show_help (null, "help_forecast_table.html");
 		}
 		break;
 

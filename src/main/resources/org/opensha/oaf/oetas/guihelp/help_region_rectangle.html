@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <title>Edit Region: Custom Rectangle</title>
+    </head>
+    <body>
+        <h2>Edit Region: Custom Rectangle</h2>
+        <p>
+            This region is a rectangle, that spans specified ranges of latitude and longitude.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Min Latitude<br>Max Latitude</b></p>
+        <p>
+            These fields contain the minimum and maximum latitude of the rectangle.
+            Latitude can range from -90.0 to 90.0, with positive values denoting the northern hemisphere.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Min Longitude<br>Max Longitude</b></p>
+        <p>
+            These fields contain the minimum and maximum longitude of the rectangle.
+            Longitude can range from -180.0 to 180.0, with positive values denoting the eastern hemisphere.
+        </p>
+        <p>
+            A rectangle can span a maximum of 180 degrees of longitude.
+            If you enter a range of longitudes that spans more than 180 degrees,
+            the result is a rectangle that &quot;goes around the other way&quot; and crosses the date line.
+            For example, if you enter minimum longitude -170.0 and maximum longitude 160.0, the result is
+            a rectange that spans 30 degrees of longitude, from 160.0 to 180.0 and from -180.0 to -170.0.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Min Depth<br>Max Depth</b></p>
+        <p>
+            These fields contain the minimum and maximum allowed depth of aftershocks and foreshocks, in kilometers.
+            Any aftershocks or foreshocks whose depth lies outside this range are ignored.
+        </p>
+        <p>
+            The default values are -5.0 and 700.0, which is the largest depth range allowed by OpenSHA.
+            It is strongly recommended that you not change these value.
+        </p>
+    </body>
+</html>

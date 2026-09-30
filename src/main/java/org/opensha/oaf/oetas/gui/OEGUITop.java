@@ -151,6 +151,10 @@ import org.opensha.oaf.util.gui.GUIEDTException;
 import org.opensha.oaf.util.gui.GUIEDTRunnable;
 import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
+import org.opensha.oaf.util.gui.GUIHtmlViewerDialog;
+import org.opensha.oaf.util.gui.GUIHelpListener;
+import org.opensha.oaf.oetas.OEConstants;
+import java.net.URL;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -159,6 +163,8 @@ import org.opensha.oaf.aafs.MongoDBSSLParams;
 import org.opensha.oaf.aafs.VersionInfo;
 import org.opensha.oaf.comcat.ComcatOAFAccessor;
 import org.opensha.oaf.comcat.ComcatOAFProduct;
+
+import java.util.function.Supplier;
 
 import org.json.simple.JSONObject;
 
@@ -219,6 +225,14 @@ public class OEGUITop extends OEGUIComponent {
 
 	public final boolean get_trace_events () {
 		return trace_events;
+	}
+
+	// Setting this flag true enables the built-in help system.
+
+	private boolean provide_help = true;
+
+	public final boolean get_provide_help () {
+		return provide_help;
 	}
 
 
@@ -738,6 +752,166 @@ public class OEGUITop extends OEGUIComponent {
 
 
 
+	//----- Help viewer -----
+
+
+
+
+	// The help viewer.
+
+	private GUIHtmlViewerDialog help_viewer = null;
+
+	// The owner for the help viewer.
+
+	private Component help_owner = null;
+
+	// The locator for the help viewer.
+
+	private Component help_locator = null;
+
+	// The directory that contains help files.
+
+	private static final String HELP_DIRECTORY = "guihelp/";
+
+
+
+
+	// Initialize the help viewer.
+
+	private void init_help () {
+		if (get_provide_help()) {
+			help_viewer = new GUIHtmlViewerDialog (false, trace_events);
+			help_owner = get_top_window();
+			help_locator = gui_view.get_tabbedPane();
+
+			Dimension help_size = new Dimension (get_chartWidth() * 3 / 4, get_height() * 3 / 4);
+			help_viewer.setDialogDimensions (help_size);
+			help_viewer.setDialogTitle ("OAF GUI Help Viewer");
+			help_viewer.setCancelText ("Close");
+			help_viewer.set_nav_config (true, false, false, null, null);
+		}
+
+		return;
+	}
+
+
+
+
+	// Show a help screen.
+	// Perameters:
+	//  c = Help component, from the help listener.
+	//  help_file = HTML filename, in the GUI help directory.
+
+	public void show_help (Component c, String help_file) throws GUIEDTException {
+		URL help_url = null;
+		if (help_file != null) {
+			if (get_trace_events()) {
+				System.out.println ("?!?!? Help request: " + help_file);
+			}
+			help_url = OEConstants.class.getResource (HELP_DIRECTORY + help_file);
+		}
+		else {
+			if (get_trace_events()) {
+				System.out.println ("?!?!? Help request: Null file");
+			}
+		}
+		help_viewer.openDialog (help_owner, help_locator, help_url);
+		return;
+	}
+
+
+
+
+	// Make a help listener that displays the specified help file.
+	// Returns null if help is not being provided.
+
+	public GUIHelpListener make_help (final String help_file) {
+		if (!( get_provide_help() )) {
+			return null;
+		}
+		return (c) -> {
+			show_help (c, help_file);
+			return;
+		};
+	}
+
+
+
+
+	// Make a help listener that displays the help file returned by the supplier.
+	// Returns null if help is not being provided.
+
+	public GUIHelpListener make_help (final Supplier<String> help_file_supplier) {
+		if (!( get_provide_help() )) {
+			return null;
+		}
+		return (c) -> {
+			show_help (c, help_file_supplier.get());
+			return;
+		};
+	}
+
+
+
+
+	// Show a help screen for a modal dialog.
+	// Perameters:
+	//  c = Help component, from the help listener.
+	//  help_file = HTML filename, in the GUI help directory.
+	// The help component is used as the owner.
+
+	public void show_help_modal (Component c, String help_file) throws GUIEDTException {
+		URL help_url = null;
+		if (help_file != null) {
+			if (get_trace_events()) {
+				System.out.println ("?!?!? Help request: " + help_file);
+			}
+			help_url = OEConstants.class.getResource (HELP_DIRECTORY + help_file);
+		}
+		else {
+			if (get_trace_events()) {
+				System.out.println ("?!?!? Help request: Null file");
+			}
+		}
+		help_viewer.openDialog (c, help_locator, help_url);
+		return;
+	}
+
+
+
+
+	// Make a help listener that displays the specified help file for a modal dialog.
+	// Returns null if help is not being provided.
+
+	public GUIHelpListener make_help_modal (final String help_file) {
+		if (!( get_provide_help() )) {
+			return null;
+		}
+		return (c) -> {
+			show_help_modal (c, help_file);
+			return;
+		};
+	}
+
+
+
+
+	// Make a help listener that displays the help file returned by the supplier for a modal dialog.
+	// Returns null if help is not being provided.
+
+	public GUIHelpListener make_help_modal (final Supplier<String> help_file_supplier) {
+		if (!( get_provide_help() )) {
+			return null;
+		}
+		return (c) -> {
+			show_help_modal (c, help_file_supplier.get());
+			return;
+		};
+	}
+
+
+
+
 	//----- Construction -----
 
 
@@ -847,8 +1021,77 @@ public class OEGUITop extends OEGUIComponent {
 		get_top_window().setContentPane(mainPanel);
 		get_top_window().setSize(get_paramWidth()*paramColumns + get_chartWidth(), get_height());
 		get_top_window().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		get_top_window().setTitle("Aftershock Statistics GUI");
+		//get_top_window().setTitle("USGS Operational Aftershock Forecasting (OAF) GUI - Version " + VersionInfo.get_version_number() + " (" + VersionInfo.get_version_date() + ")");
 		get_top_window().setLocationRelativeTo(null);
+
+		try {
+			set_window_title (null, null);
+		} catch (GUIEDTException e) {
+			throw new IllegalStateException ("OEGUITop.OEGUITop - Caught GUIEDTException, which should never be thrown", e);
+		}
+
+		init_help();
+	}
+
+
+
+
+	// The current window title (cannot be null).
+
+	private String current_window_title = "";
+
+
+	// Separator for window title components.
+
+	//private static final String window_title_sep = " - ";
+	private static final String window_title_sep = "    \u2022    ";		// Unicode bullet
+	//private static final String window_title_sep = "    \u25CF    ";		// Unicode black circle
+
+
+	// Set the window title.
+
+	public void set_window_title (String mainshock_info, String program_state) throws GUIEDTException {
+		String my_mainshock_info = ((mainshock_info == null) ? "" : mainshock_info.trim());
+		String my_program_state = ((program_state == null) ? "" : program_state.trim());
+		String new_title = "";
+
+		if (my_mainshock_info.isEmpty()) {
+			if (my_program_state.isEmpty()) {
+
+				// No info or state, use the default title
+
+				new_title = "USGS Operational Aftershock Forecasting (OAF) GUI" + window_title_sep + "Version " + VersionInfo.get_version_number() + " (" + VersionInfo.get_version_date() + ")";
+			}
+			else {
+
+				// Has program state only
+
+				new_title = "USGS OAF GUI" + window_title_sep + my_program_state;
+			}
+		}
+		else {
+			if (my_program_state.isEmpty()) {
+
+				// Has mainshock info only
+
+				new_title = "USGS OAF GUI" + window_title_sep + my_mainshock_info;
+			}
+			else {
+
+				// Has mainshock info and program state
+
+				new_title = "USGS OAF GUI" + window_title_sep + my_mainshock_info + window_title_sep + my_program_state;
+			}
+		}
+
+		// If title has changed, write to the window
+
+		if (!( new_title.equals (current_window_title) )) {
+			current_window_title = new_title;
+			get_top_window().setTitle (new_title);
+		}
+
+		return;
 	}
 
 

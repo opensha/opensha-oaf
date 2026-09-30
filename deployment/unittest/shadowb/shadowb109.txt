@@ -48,3 +48,11 @@ separation_km = 13.124
 separation_days = -70.660
 seq_end_time_abs = 624672255190 (1989-10-18 00:04:15 UTC)
 seq_end_time_rel_days = 70.660
+seq_end_rupture = ObsEqkRupture:
+rup_event_id = nc216859
+rup_time = 624672255190 (1989-10-18 00:04:15 UTC)
+rup_mag = 6.9
+rup_lat = 37.0361667
+rup_lon = -121.8798333
+rup_depth = 17.214
+

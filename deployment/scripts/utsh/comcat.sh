@@ -3,6 +3,7 @@
 # Unit tests for Comcat functions.
 
 n=100
+delaytime=4
 
 # Tests using M7.8 Nepal - us20002926
 

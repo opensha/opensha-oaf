@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
+import java.awt.Component;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -88,7 +89,7 @@ import org.opensha.commons.mapping.gmt.elements.GMT_CPT_Files;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.ParameterList;
 import org.opensha.commons.param.editor.impl.GriddedParameterListEditor;
-import org.opensha.commons.param.editor.impl.ParameterListEditor;
+//import org.opensha.commons.param.editor.impl.ParameterListEditor;
 import org.opensha.commons.param.event.ParameterChangeEvent;
 import org.opensha.commons.param.event.ParameterChangeListener;
 import org.opensha.commons.param.impl.BooleanParameter;
@@ -138,6 +139,7 @@ import org.opensha.oaf.util.gui.GUIEventAlias;
 import org.opensha.oaf.util.gui.GUIExternalCatalog;
 import org.opensha.oaf.util.gui.GUIParameterListParameter;
 import org.opensha.oaf.util.gui.GUIButtonParameter;
+import org.opensha.oaf.util.gui.GUIParameterListEditor;
 
 import org.opensha.oaf.aafs.ServerConfig;
 import org.opensha.oaf.aafs.ServerConfigFile;
@@ -178,6 +180,7 @@ public class OEGUIController extends OEGUIListener {
 	private static final int PARMGRP_FORECAST_BUTTON = 105;		// Button to compute forecast
 	private static final int PARMGRP_SERVER_STATUS = 106;		// Button to fetch server status
 	private static final int PARMGRP_PARAMS_FC_BUTTON = 107;	// Button to compute aftershock parameters and forecast in one step
+	private static final int PARMGRP_HELP_TOPICS_BUTTON = 108;	// Button to open help topics
 
 
 	//----- Sub-controllers -----
@@ -323,7 +326,7 @@ public class OEGUIController extends OEGUIListener {
 	private ButtonParameter saveCatalogButton;
 
 	private ButtonParameter init_saveCatalogButton () throws GUIEDTException {
-		saveCatalogButton = new ButtonParameter("Aftershock Catalog", "Save Catalog...");
+		saveCatalogButton = new ButtonParameter("Save Aftershock Catalog", "Save Catalog...");
 		saveCatalogButton.setInfo("Save catalog to file in 10 column format");
 		register_param (saveCatalogButton, "saveCatalogButton", PARMGRP_SAVE_CATALOG);
 		return saveCatalogButton;
@@ -335,9 +338,20 @@ public class OEGUIController extends OEGUIListener {
 	private ButtonParameter fetchServerStatusButton;
 
 	private ButtonParameter init_fetchServerStatusButton () throws GUIEDTException {
-		fetchServerStatusButton = new ButtonParameter("AAFS Server", "Fetch Server Status");
+		fetchServerStatusButton = new ButtonParameter("AAFS Server Status", "Fetch Server Status");
 		register_param (fetchServerStatusButton, "fetchServerStatusButton", PARMGRP_SERVER_STATUS);
 		return fetchServerStatusButton;
+	}
+
+
+	// Open Help Topics button.
+
+	private ButtonParameter openHelpTopicsButton;
+
+	private ButtonParameter init_openHelpTopicsButton () throws GUIEDTException {
+		openHelpTopicsButton = new ButtonParameter("Help Topics", "Open Help Topics");
+		register_param (openHelpTopicsButton, "openHelpTopicsButton", PARMGRP_HELP_TOPICS_BUTTON);
+		return openHelpTopicsButton;
 	}
 
 
@@ -348,15 +362,15 @@ public class OEGUIController extends OEGUIListener {
 
 	// Container for data parameters.
 
-	private ParameterListEditor dataEditor;
+	private GUIParameterListEditor dataEditor;
 
-	public final ParameterListEditor get_dataEditor () {
+	public final GUIParameterListEditor get_dataEditor () {
 		return dataEditor;
 	}
 
 	private int dataEditorHeight;
 
-	private ParameterListEditor init_dataEditor () throws GUIEDTException {
+	private GUIParameterListEditor init_dataEditor () throws GUIEDTException {
 
 		// Controls in the "Data Source" column
 
@@ -373,7 +387,7 @@ public class OEGUIController extends OEGUIListener {
 
 		dataEditorHeight = (gui_top.get_height() * 4) / 10;
 
-		dataEditor = new ParameterListEditor(dataParams);
+		dataEditor = new GUIParameterListEditor(dataParams, gui_top.make_help ("help_data_source.html"));
 		dataEditor.setTitle("Data Source");
 		dataEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), dataEditorHeight));
 		return dataEditor;
@@ -382,15 +396,15 @@ public class OEGUIController extends OEGUIListener {
 
 	// Container for aftershock parameters.
 
-	private ParameterListEditor fitEditor;
+	private GUIParameterListEditor fitEditor;
 
-	public final ParameterListEditor get_fitEditor () {
+	public final GUIParameterListEditor get_fitEditor () {
 		return fitEditor;
 	}
 
 	private int fitEditorHeight;
 
-	private ParameterListEditor init_fitEditor () throws GUIEDTException {
+	private GUIParameterListEditor init_fitEditor () throws GUIEDTException {
 
 		// Controls in the "Aftershock Parameters" column
 		
@@ -414,7 +428,7 @@ public class OEGUIController extends OEGUIListener {
 		//fitEditorHeight = (gui_top.get_height() * 4) / 10;
 		fitEditorHeight = gui_top.get_height() - (dataEditorHeight);
 
-		fitEditor = new ParameterListEditor(fitParams);
+		fitEditor = new GUIParameterListEditor(fitParams, gui_top.make_help ("help_param_main.html"));
 		fitEditor.setTitle("Aftershock Parameters");
 		fitEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fitEditorHeight));
 		return fitEditor;
@@ -423,15 +437,15 @@ public class OEGUIController extends OEGUIListener {
 
 //	// Container for forecast parameters.
 //
-//	private ParameterListEditor fcastEditor;
+//	private GUIParameterListEditor fcastEditor;
 //
-//	public final ParameterListEditor get_fcastEditor () {
+//	public final GUIParameterListEditor get_fcastEditor () {
 //		return fcastEditor;
 //	}
 //
 //	private int fcastEditorHeight;
 //
-//	private ParameterListEditor init_fcastEditor () throws GUIEDTException {
+//	private GUIParameterListEditor init_fcastEditor () throws GUIEDTException {
 //
 //		// Controls in the "Forecasts" column
 //		
@@ -446,7 +460,7 @@ public class OEGUIController extends OEGUIListener {
 //
 //		fcastEditorHeight = gui_top.get_height() - (dataEditorHeight + fitEditorHeight);
 //
-//		fcastEditor = new ParameterListEditor(fcastParams);
+//		fcastEditor = new GUIParameterListEditor(fcastParams);
 //		fcastEditor.setTitle("Forecasts");
 //		fcastEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fcastEditorHeight));
 //		return fcastEditor;
@@ -455,17 +469,17 @@ public class OEGUIController extends OEGUIListener {
 
 	// Container for more functions.
 
-	private ParameterListEditor aafsEditor;
+	private GUIParameterListEditor aafsEditor;
 
-	public final ParameterListEditor get_aafsEditor () {
+	public final GUIParameterListEditor get_aafsEditor () {
 		return aafsEditor;
 	}
 
 	private int aafsEditorHeight;
 
-	private ParameterListEditor init_aafsEditor () throws GUIEDTException {
+	private GUIParameterListEditor init_aafsEditor () throws GUIEDTException {
 
-		// Controls in the "More" column
+		// Controls in the "More Tools" column
 		
 		ParameterList aafsParams = new ParameterList();
 
@@ -488,8 +502,8 @@ public class OEGUIController extends OEGUIListener {
 
 		aafsEditorHeight = (gui_top.get_height() * 6) / 10;
 
-		aafsEditor = new ParameterListEditor(aafsParams);
-		aafsEditor.setTitle("More");
+		aafsEditor = new GUIParameterListEditor(aafsParams, gui_top.make_help ("help_mtool_main.html"));
+		aafsEditor.setTitle("More Tools");
 		aafsEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), aafsEditorHeight));
 		return aafsEditor;
 	}
@@ -497,25 +511,29 @@ public class OEGUIController extends OEGUIListener {
 
 	// Container for filler.
 
-	private ParameterListEditor fillerEditor;
+	private GUIParameterListEditor fillerEditor;
 
-	public final ParameterListEditor get_fillerEditor () {
+	public final GUIParameterListEditor get_fillerEditor () {
 		return fillerEditor;
 	}
 
 	private int fillerEditorHeight;
 
-	private ParameterListEditor init_fillerEditor () throws GUIEDTException {
+	private GUIParameterListEditor init_fillerEditor () throws GUIEDTException {
 
 		// Controls in the "Filler" column
 		
 		ParameterList fillerParams = new ParameterList();
 
+		if (gui_top.get_provide_help()) {
+			fillerParams.addParameter(init_openHelpTopicsButton());
+		}
+
 		// Create the container
 
 		fillerEditorHeight = gui_top.get_height() - aafsEditorHeight;
 
-		fillerEditor = new ParameterListEditor(fillerParams);
+		fillerEditor = new GUIParameterListEditor(fillerParams);
 		fillerEditor.setTitle("...");
 		fillerEditor.setPreferredSize(new Dimension(gui_top.get_paramWidth(), fillerEditorHeight));
 		return fillerEditor;
@@ -1401,6 +1419,10 @@ public class OEGUIController extends OEGUIListener {
 			final GUICalcProgressBar progress = new GUICalcProgressBar(gui_top.get_top_window(), "", "", false);
 			final XferCatalogImpl xfer_catalog_impl = new XferCatalogImpl();
 
+			// Show console window during fetch
+
+			gui_view.view_show_console();
+
 			// Load the data source parameters
 
 			if (!( gui_top.call_xfer_load (xfer_catalog_impl, "Incorrect data source parameters") )) {
@@ -1424,20 +1446,54 @@ public class OEGUIController extends OEGUIListener {
 
 				if (fetch_count != 1 && xfer_catalog_impl.x_dataSource.x_region.x_regionTypeParam != RegionType.STANDARD) {
 
+					//  // Ask user to confirm choice of region
+					//  
+					//  String message
+					//  	= "Click \"Yes\" to use the currently-selected search region ("
+					//  	+ xfer_catalog_impl.x_dataSource.x_region.x_regionTypeParam.toString()
+					//  	+ ").\n\n"
+					//  	+ "Click \"No\" to use the Standard search region.\n\n"
+					//  	+ "Click \"Cancel\" to abort the fetch operation.";
+					//  
+					//  int conf = JOptionPane.showConfirmDialog(gui_top.get_top_window(), message, "Confirm aftershock search region", JOptionPane.YES_NO_CANCEL_OPTION);
+					//  if (conf == JOptionPane.NO_OPTION) {
+					//  	xfer_catalog_impl.x_dataSource.x_region.modify_regionTypeParam (RegionType.STANDARD);
+					//  }
+					//  else if (conf != JOptionPane.YES_OPTION) {
+					//  	return;
+					//  }
+
 					// Ask user to confirm choice of region
 
 					String message
-						= "Click \"Yes\" to use the currently-selected search region ("
+						= "A custom aftershock search region is currently selected.\n"
+						+ "Do you want to continue using the custom search region, or switch back to the standard search region?\n\n"
+						+ "Click \"Custom Region\" to use the currently-selected custom search region ("
 						+ xfer_catalog_impl.x_dataSource.x_region.x_regionTypeParam.toString()
 						+ ").\n\n"
-						+ "Click \"No\" to use the Standard search region.\n\n"
+						+ "Click \"Standard Region\" to use the standard search region.\n\n"
 						+ "Click \"Cancel\" to abort the fetch operation.";
 
-					int conf = JOptionPane.showConfirmDialog(gui_top.get_top_window(), message, "Confirm aftershock search region", JOptionPane.YES_NO_CANCEL_OPTION);
-					if (conf == JOptionPane.NO_OPTION) {
+					Object[] options = {"Custom Region", "Standard Region", "Cancel"};
+					final int my_OPT_CUSTOM = 0;
+					final int my_OPT_STANDARD = 1;
+					final int my_OPT_CANCEL = 2;
+
+					int conf = JOptionPane.showOptionDialog (
+						gui_top.get_top_window(),				// parent window
+						message,								// message
+						"Confirm aftershock search region",		// dialog title
+						JOptionPane.YES_NO_CANCEL_OPTION,		// ignored when options are given
+						JOptionPane.QUESTION_MESSAGE,			// message type (determines icon)
+						null,									// icon
+						options,								// options
+						options[my_OPT_CUSTOM]					// default selection
+					);
+					
+					if (conf == my_OPT_STANDARD) {
 						xfer_catalog_impl.x_dataSource.x_region.modify_regionTypeParam (RegionType.STANDARD);
 					}
-					else if (conf != JOptionPane.YES_OPTION) {
+					else if (conf != my_OPT_CUSTOM) {
 						return;
 					}
 				}
@@ -1917,6 +1973,10 @@ public class OEGUIController extends OEGUIListener {
 			final XferFittingImpl xfer_fitting_impl = new XferFittingImpl();
 			final XferForecastImpl xfer_forecast_impl = new XferForecastImpl();
 
+			// Show console window during fit and forecast
+
+			gui_view.view_show_console();
+
 			// Load the aftershock parameters
 
 			if (!( gui_top.call_xfer_load (xfer_fitting_impl, "Incorrect aftershock parameters") )) {
@@ -2088,6 +2148,22 @@ public class OEGUIController extends OEGUIListener {
 				}
 			};
 			GUICalcRunnable.run_steps (progress, postComputeStep, computeStep_1, computeStep_2);
+		}
+		break;
+
+
+
+
+		// Open help topics.
+
+		case PARMGRP_HELP_TOPICS_BUTTON: {
+			if (filter_state(MODSTATE_INITIAL, FILTOPT_TEST)) {
+				return;
+			}
+
+			// Show help topics
+
+			gui_top.show_help (null, "help_topics.html");
 		}
 		break;
 

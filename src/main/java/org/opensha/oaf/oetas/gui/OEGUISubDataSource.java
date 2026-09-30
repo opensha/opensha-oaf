@@ -219,9 +219,24 @@ public class OEGUISubDataSource extends OEGUIListener {
 
 	private EnumParameter<DataSource> dataSourceTypeParam;
 
+//	private EnumParameter<DataSource> init_dataSourceTypeParam () throws GUIEDTException {
+//		dataSourceTypeParam = new EnumParameter<DataSource>(
+//				"Data Source Type", EnumSet.allOf(DataSource.class), DataSource.COMCAT, null);
+//		dataSourceTypeParam.setInfo("Source of earthquake catalog data");
+//		register_param (dataSourceTypeParam, "dataSourceTypeParam", PARMGRP_DATA_SOURCE_TYPE);
+//		return dataSourceTypeParam;
+//	}
+
 	private EnumParameter<DataSource> init_dataSourceTypeParam () throws GUIEDTException {
+		EnumSet<DataSource> supportedSources = EnumSet.of (
+			DataSource.COMCAT,
+			DataSource.CATALOG_FILE,
+			DataSource.PUBLISHED_FORECAST,
+			DataSource.MAINSHOCK_ONLY,
+			DataSource.DOWNLOAD_FILE
+		);
 		dataSourceTypeParam = new EnumParameter<DataSource>(
-				"Data Source Type", EnumSet.allOf(DataSource.class), DataSource.COMCAT, null);
+				"Data Source Type", supportedSources, DataSource.COMCAT, null);
 		dataSourceTypeParam.setInfo("Source of earthquake catalog data");
 		register_param (dataSourceTypeParam, "dataSourceTypeParam", PARMGRP_DATA_SOURCE_TYPE);
 		return dataSourceTypeParam;
@@ -801,7 +816,20 @@ public class OEGUISubDataSource extends OEGUIListener {
 	private GUIParameterListParameter init_dataSourceEditParam () throws GUIEDTException {
 		dataSourceList = new ParameterList();
 		dataSourceEditParam = new GUIParameterListParameter("Data Source", dataSourceList, "Edit Data Source...",
-							"Edit Data Source", "Data Source Parameters", null, null, false, gui_top.get_trace_events());
+							"Edit Data Source", "Data Source Parameters", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help (() -> {
+								String help_file = null;
+								switch (dataSourceTypeParam.getValue()) {
+								case COMCAT:             help_file = "help_data_comcat.html";    break;
+								case CATALOG_FILE:       help_file = "help_data_catalog.html";   break;
+								case PUBLISHED_FORECAST: help_file = "help_data_forecast.html";  break;
+								case MAINSHOCK_ONLY:     help_file = "help_data_mainshock.html"; break;
+								case DOWNLOAD_FILE:      help_file = "help_data_download.html";  break;
+								case RJ_SIMULATION:      help_file = null;                       break;
+								case ETAS_SIMULATION:    help_file = null;                       break;
+								}
+								return help_file;
+							}));
 		dataSourceEditParam.setInfo("Select catalog data source options");
 		register_param (dataSourceEditParam, "dataSourceEditParam", PARMGRP_DATA_SOURCE_EDIT);
 

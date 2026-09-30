@@ -8,6 +8,7 @@ import org.opensha.commons.data.function.HistogramFunction;
 import org.opensha.commons.data.xyz.EvenlyDiscrXYZ_DataSet;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
+import org.opensha.commons.geo.Location;
 import org.opensha.sha.magdist.ArbIncrementalMagFreqDist;
 import org.opensha.sha.magdist.GutenbergRichterMagFreqDist;
 
@@ -442,7 +443,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 			// Make the mainshock
 
-			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, null, magMain);
+			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, new Location (0.0, 0.0, 0.0), magMain);
 
 			// Make the model, it will output some information
 
@@ -524,7 +525,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 			// Make the mainshock
 
-			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, null, magMain);
+			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, new Location (0.0, 0.0, 0.0), magMain);
 
 			// Make the model, it will output some information
 
@@ -641,7 +642,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 			// Make the mainshock
 
-			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, null, magMain);
+			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, new Location (0.0, 0.0, 0.0), magMain);
 
 			// Compact form of list
 
@@ -783,7 +784,7 @@ public class RJ_AftershockModel_SequenceSpecific extends RJ_AftershockModel {
 
 			// Make the mainshock
 
-			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, null, magMain);
+			ObsEqkRupture mainShock = new ObsEqkRupture("0", 0L, new Location (0.0, 0.0, 0.0), magMain);
 
 			// Compact form of list
 

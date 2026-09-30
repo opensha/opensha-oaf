@@ -32,7 +32,7 @@ import org.opensha.commons.param.event.ParameterChangeEvent;
 import org.opensha.commons.param.event.ParameterChangeListener;
 //import org.opensha.commons.param.impl.ParameterListParameter;
 //import org.opensha.commons.param.editor.impl.ParameterListParameterEditor;
-import org.opensha.commons.param.editor.impl.ParameterListEditor;
+//import org.opensha.commons.param.editor.impl.ParameterListEditor;
 
 
 /**
@@ -67,7 +67,7 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 	protected boolean D = false;
 
 	// Editor to hold all the parameters in this parameter.
-	protected ParameterListEditor editor = null;
+	protected GUIParameterListEditor editor = null;
 	
 	// The button that activates the dialog.
 	private JButton button = null;
@@ -383,7 +383,11 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 
 		Window owner = null;
 		if (ownerComponent != null) {
-			owner = SwingUtilities.windowForComponent(ownerComponent);
+			if (ownerComponent instanceof Window) {
+				owner = (Window)ownerComponent;
+			} else {
+				owner = SwingUtilities.windowForComponent(ownerComponent);
+			}
 		}
 		if (owner == null && button != null) {
 			owner = SwingUtilities.windowForComponent(button);
@@ -806,7 +810,12 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 
 		// Set up the editor for the parameter list
 
-		editor = new ParameterListEditor(paramList);
+		GUIHelpListener helpListener = ((GUIParameterListParameter)getParameter()).getHelpListener();
+		if (helpListener != null) {
+			editor = new GUIParameterListEditor(paramList, helpListener);
+		} else {
+			editor = new GUIParameterListEditor(paramList);
+		}
 		//editor.setTitle("Set "+getParameter().getName());
 		editor.setTitle(((GUIParameterListParameter)getParameter()).getListTitleText());
 		//editor.refreshParamEditor();
@@ -879,7 +888,12 @@ public class GUIParameterListParameterEditor extends GUIAbstractParameterEditor<
 		// Set up the editor for the parameter list
 
 		if (editor == null) {
-			editor = new ParameterListEditor(paramList);
+			GUIHelpListener helpListener = ((GUIParameterListParameter)getParameter()).getHelpListener();
+			if (helpListener != null) {
+				editor = new GUIParameterListEditor(paramList, helpListener);
+			} else {
+				editor = new GUIParameterListEditor(paramList);
+			}
 		} else {
 			editor.setParameterList(paramList);
 		}

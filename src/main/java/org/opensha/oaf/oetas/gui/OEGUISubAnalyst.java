@@ -368,7 +368,8 @@ public class OEGUISubAnalyst extends OEGUIListener {
 	private GUIParameterListParameter init_analystEditParam () throws GUIEDTException {
 		analystList = new ParameterList();
 		analystEditParam = new GUIParameterListParameter("Analyst Parameters", analystList, "Edit Analyst Params...",
-							"Edit Analyst Parameters", "Analyst Parameters", null, null, false, gui_top.get_trace_events());
+							"Edit Analyst Parameters", "Analyst Parameters", null, null, false, gui_top.get_trace_events(),
+							gui_top.make_help ("help_mtool_analyst_params.html"));
 		analystEditParam.setInfo("Set analyst parameter values, and send to AAFS server");
 		register_param (analystEditParam, "analystEditParam", PARMGRP_ANALYST_EDIT);
 
@@ -812,7 +813,11 @@ public class OEGUISubAnalyst extends OEGUIListener {
 			scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 			area.setLineWrap(true);
 			area.setWrapStyleWord(true);
-			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, "Set Analyst Remark (Caution - Publicly Visible)", JOptionPane.OK_CANCEL_OPTION);
+			String title = "Append or Set Analyst Remark (Caution - Publicly Visible)";
+			if (prevText.trim().isEmpty()) {
+				title = "Set Analyst Remark (Caution - Publicly Visible)";
+			}
+			int ret = JOptionPane.showConfirmDialog(gui_top.get_top_window(), scroll, title, JOptionPane.OK_CANCEL_OPTION);
 
 			// If user entered new text, store it
 
@@ -942,10 +947,11 @@ public class OEGUISubAnalyst extends OEGUIListener {
 				@Override
 				public void run_in_edt() throws GUIEDTException {
 					if (send_success[0]) {
-						String message = "Success: Analyst options have been successfully sent to server";
+						String message = "Success: Analyst options have been successfully sent to server.";
 						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send Succeeded", JOptionPane.INFORMATION_MESSAGE);
 					} else {
-						String message = "Error: Unable to send analyst options to any server";
+						gui_view.view_show_console();
+						String message = "Error: Unable to send analyst options to any server.\n\nMore information may be available in the Console window.";
 						JOptionPane.showMessageDialog(gui_top.get_top_window(), message, "Send Failed", JOptionPane.ERROR_MESSAGE);
 					}
 				}

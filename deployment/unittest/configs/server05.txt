@@ -156,7 +156,7 @@ pdl_key_filename =
 pdl_err_rate = 0.0
 pdl_oaf_source = us
 pdl_oaf_type = oaf
-pdl_target = 1
+pdl_target = 2
 pdl_senders = [
 ]
 is_pdl_permitted = false
@@ -172,14 +172,20 @@ is_pdl_down = false
 is_pdl_sender_sign = false
 is_pdl_we_sign = true
 pdl_senders (PROD) = [
-  0:  PDLSenderConfig: host = prod01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
-  1:  PDLSenderConfig: host = prod02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+  0:  PDLAwsSenderConfig:
+connectTimeout = 15000
+url = "https://earthquake.usgs.gov"
+signProducts = true
+sendProductPath = ""
+getUploadUrlsPath = ""
+contentFormat = ""
+
 ]
 is_pdl_permitted = true
 is_pdl_readback_prod = true
 is_pdl_down = false
-is_pdl_sender_sign = false
-is_pdl_we_sign = true
+is_pdl_sender_sign = true
+is_pdl_we_sign = false
 pdl_senders (SIM DEV) = [
 ]
 is_pdl_permitted = false
@@ -188,14 +194,20 @@ is_pdl_down = false
 is_pdl_sender_sign = false
 is_pdl_we_sign = true
 pdl_senders (SIM PROD) = [
-  0:  PDLSenderConfig: host = prod01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
-  1:  PDLSenderConfig: host = prod02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+  0:  PDLAwsSenderConfig:
+connectTimeout = 15000
+url = "https://earthquake.usgs.gov"
+signProducts = true
+sendProductPath = ""
+getUploadUrlsPath = ""
+contentFormat = ""
+
 ]
 is_pdl_permitted = false
 is_pdl_readback_prod = true
 is_pdl_down = false
-is_pdl_sender_sign = false
-is_pdl_we_sign = true
+is_pdl_sender_sign = true
+is_pdl_we_sign = false
 pdl_senders (DOWN DEV) = [
 ]
 is_pdl_permitted = false
@@ -204,14 +216,20 @@ is_pdl_down = true
 is_pdl_sender_sign = false
 is_pdl_we_sign = true
 pdl_senders (DOWN PROD) = [
-  0:  PDLSenderConfig: host = prod01-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
-  1:  PDLSenderConfig: host = prod02-pdl01.cr.usgs.gov, port = 11235, connectTimeout = 15000
+  0:  PDLAwsSenderConfig:
+connectTimeout = 15000
+url = "https://earthquake.usgs.gov"
+signProducts = true
+sendProductPath = ""
+getUploadUrlsPath = ""
+contentFormat = ""
+
 ]
 is_pdl_permitted = false
 is_pdl_readback_prod = true
 is_pdl_down = true
-is_pdl_sender_sign = false
-is_pdl_we_sign = true
+is_pdl_sender_sign = true
+is_pdl_we_sign = false
 pdl_senders (DEV, SOCKET) = [
 ]
 is_pdl_permitted = true

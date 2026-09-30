@@ -1,0 +1,96 @@
+<html>
+    <head>
+        <title>Command Line: GUI Configuration</title>
+    </head>
+    <body>
+        <h2>Command Line: GUI Configuration</h2>
+        <p>
+            These command line options are used to configure the GUI.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Example</b></p>
+        <p>
+            For example, the following command line can be used to enable ETAS forecasts and event-sequence products within the GUI.
+        </p>
+<pre>
+java -jar AftershockGUI-2026_01_06.jar --etas-config=enable --evseq-config=enable
+</pre>
+        <p>
+            In this example, the <code>--etas-config</code> option specifies that ETAS forecasts should be generated,
+            and the <code>--evseq-config</code> option specifies that event-sequence products should be used.
+            Note that the name of the GUI jar file may be different than shown.
+        </p>
+        <p>
+            Currently, the use of event-sequence products is enabled by default, so <code>--evseq-config=enable</code>
+            is not necessary.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Summary</b></p>
+        <p>
+            GUI configuration options are described in detail below.
+            All GUI configuration options are optional; if omitted, then the GUI supplies defaults.
+        </p>
+        <p>
+            Options may appear in the command line in any order.
+        </p>
+        <p>
+            You can look at the <a href="help_view_information.html">information window</a> to see the GUI configuration options that are currently in effect.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Option Details</b></p>
+        <p>&nbsp;</p>
+<pre>
+--etas-config=enable
+--etas-config=disable
+</pre>
+        <p>
+            The <code>--etas-config</code> option specifies whether the GUI should fit ETAS parameters and generate ETAS forecasts. It can have the following values:
+        </p>
+        <ul>
+            <li><i>enable</i> - Fit ETAS parameters and generate ETAS forecasts.</li>
+            <li><i>disable</i> - Do not fit ETAS parameters or generate ETAS forecasts.</li>
+        </ul>
+        <p>
+            Note that if the OAF server does not support ETAS, you cannot make the server generate ETAS forecasts
+            by enabling ETAS in the GUI and then sending forecast parameters to the server.
+        </p>
+        <p>
+            If the <code>--etas-config</code> option is omitted, the GUI supplies a pre-programmed default.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+--evseq-config=enable
+--evseq-config=disable
+</pre>
+        <p>
+            The <code>--evseq-config</code> option specifies whether the GUI can generate and send event-sequence products. It can have the following values:
+        </p>
+        <ul>
+            <li><i>enable</i> - The GUI can generate and send event-sequence products.</li>
+            <li><i>disable</i> - The GUI cannot generate and send event-sequence products.</li>
+        </ul>
+        <p>
+            Note that if the OAF server does not support event-sequence products, you cannot make the server generate event-sequence products
+            by enabling event-sequence in the GUI and then sending parameters to the server.
+        </p>
+        <p>
+            If the <code>--evseq-config</code> option is omitted, the GUI supplies a pre-programmed default.
+            Currently, the pre-programmed default is <i>enable</i>.
+        </p>
+        <p>&nbsp;</p>
+<pre>
+debug
+</pre>
+        <p>
+            The <code>debug</code> option tells the GUI to run in debug mode.
+            In debug mode, the GUI writes messages to the console that trace the GUI&#39;s operation.
+        </p>
+        <p>
+            If the <code>debug</code> option is included, it must be the first option on the command line.
+            (This is an exception to the general rule that options may appear in any order.)
+        </p>
+        <p>
+            It is strongly recommended that the <code>debug</code> option not be used when performing production work.
+        </p>
+    </body>
+</html>

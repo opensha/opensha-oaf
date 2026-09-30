@@ -85,6 +85,7 @@ public class PropertiesEventSequence {
 	public static final String EVS_NAME_START_TIME = "starttime";
 	public static final String EVS_NAME_END_TIME = "endtime";
 	public static final String EVS_NAME_TITLE = "title";
+	public static final String EVS_NAME_SEQUENCE_TYPE = "sequence-type";
 
 	// Known property values for the event-sequence product.
 
@@ -94,7 +95,11 @@ public class PropertiesEventSequence {
 	public static final double EVS_CIRCLE_MAX_RADIUS_KM = 20001.6;
 
 	public static final String EVS_TITLE_SUFFIX_SEQUENCE = "Sequence";
+	public static final String EVS_TITLE_SUFFIX_SWARM = "Swarm";
 	public static final String EVS_TITLE_UNKNOWN = "Unknown";
+
+	public static final String EVS_SEQUENCE_TYPE_SEQUENCE = "sequence";
+	public static final String EVS_SEQUENCE_TYPE_SWARM = "swarm";
 
 	// Filename for the event-sequence-text product.
 
@@ -118,6 +123,23 @@ public class PropertiesEventSequence {
 
 
 	//----- Properties and flags -----
+
+
+	//--- Sequence type
+
+	// The sequence type, should be "sequence" or "swarm" ("properties/sequence-type" in the product).
+	// For a normal product, must be non-null and have one of the values "sequence" or "swarm".
+	// For a delete product, this is null.
+
+	public String sequence_type;
+
+	public final boolean is_sequence_type_sequence () {
+		return sequence_type.equals(EVS_SEQUENCE_TYPE_SEQUENCE);
+	}
+
+	public final boolean is_sequence_type_swarm () {
+		return sequence_type.equals(EVS_SEQUENCE_TYPE_SWARM);
+	}
 
 
 	//--- Associated mainshock event
@@ -857,7 +879,7 @@ public class PropertiesEventSequence {
 
 	// Set the title of the sequence, given the title of the associated event.
 
-	public final boolean set_title_from_event_title (String event_title) {
+	public final boolean set_title_from_event_title_for_sequence (String event_title) {
 		String s = event_title;
 		if (s == null || s.isEmpty()) {
 			s = EVS_TITLE_UNKNOWN;
@@ -866,6 +888,65 @@ public class PropertiesEventSequence {
 			s = s + " " + EVS_TITLE_SUFFIX_SEQUENCE;
 		}
 		return set_title (s);
+	}
+
+	// Set the title of the swarm, given the title of the associated event.
+
+	public final boolean set_title_from_event_title_for_swarm (String event_title) {
+		String s = event_title;
+		if (s == null || s.isEmpty()) {
+			s = EVS_TITLE_UNKNOWN;
+		}
+		if (!( s.endsWith (EVS_TITLE_SUFFIX_SWARM) )) {
+			s = s + " " + EVS_TITLE_SUFFIX_SWARM;
+		}
+		return set_title (s);
+	}
+
+
+
+
+	// Set or clear the sequence type, false return indicates bad value.
+
+	public final boolean set_sequence_type (String s) {
+		if (s == null || s.isEmpty()) {
+			clear_sequence_type();
+			return false;
+		}
+		if (!( s.equals(EVS_SEQUENCE_TYPE_SEQUENCE) || s.equals(EVS_SEQUENCE_TYPE_SWARM) )) {
+			clear_sequence_type();
+			return false;
+		}
+		sequence_type = s;
+		return true;
+	}
+
+	public final boolean set_sequence_type_sequence () {
+		sequence_type = EVS_SEQUENCE_TYPE_SEQUENCE;
+		return true;
+	}
+
+	public final boolean set_sequence_type_swarm () {
+		sequence_type = EVS_SEQUENCE_TYPE_SWARM;
+		return true;
+	}
+
+	public final boolean set_sequence_type_with_default (String s) {
+		if (s == null || s.isEmpty()) {
+			set_sequence_type_sequence();		// default to "sequence"
+			return true;
+		}
+		if (!( s.equals(EVS_SEQUENCE_TYPE_SEQUENCE) || s.equals(EVS_SEQUENCE_TYPE_SWARM) )) {
+			clear_sequence_type();
+			return false;
+		}
+		sequence_type = s;
+		return true;
+	}
+
+	public final void clear_sequence_type () {
+		sequence_type = null;
+		return;
 	}
 
 
@@ -878,6 +959,15 @@ public class PropertiesEventSequence {
 	// every possible error.
 
 	public String check_invariant () {
+
+		// Sequence type
+
+		if (!( sequence_type != null )) {
+			return "Sequence type is not specified";
+		}
+		if (!( is_sequence_type_sequence() || is_sequence_type_swarm() )) {
+			return "Sequence type is invalid";
+		}
 
 		// Associated mainshock event
 
@@ -985,6 +1075,12 @@ public class PropertiesEventSequence {
 
 	public String check_invariant_for_delete () {
 
+		// Sequence type
+
+		if (!( sequence_type == null )) {
+			return "Sequence type is specified, but this is a delete product";
+		}
+
 		// Associated mainshock event
 
 		if (EVS_OPTIONAL_EVENT) {
@@ -1062,6 +1158,8 @@ public class PropertiesEventSequence {
 	// Clear all variables.
 
 	public final void clear () {
+		clear_sequence_type();
+
 		clear_eventNetwork();
 		clear_eventCode();
 
@@ -1101,6 +1199,8 @@ public class PropertiesEventSequence {
 	// Returns this object.
 
 	public PropertiesEventSequence copy_from (PropertiesEventSequence other) {
+
+		sequence_type		= other.sequence_type;
 
 		eventNetwork		= other.eventNetwork;
 		eventCode			= other.eventCode;
@@ -1180,6 +1280,8 @@ public class PropertiesEventSequence {
 
 		result.append ("PropertiesEventSequence:" + "\n");
 
+		result.append (showval_string ("sequence_type", sequence_type));
+
 		result.append (showval_string ("eventNetwork", eventNetwork));
 		result.append (showval_string ("eventCode", eventCode));
 
@@ -1238,6 +1340,13 @@ public class PropertiesEventSequence {
 	public boolean read_from_product_gj (JSONObject gj_product) {
 
 		clear();
+
+		// Sequence type
+		// Note: Old event-sequence products did not have a sequence-type, so default it to "sequence" if not found.
+
+		if (!( set_sequence_type_with_default (GeoJsonUtils.getString (gj_product, "properties", EVS_NAME_SEQUENCE_TYPE)) )) {
+			return false;
+		}
 
 		// Event network
 
@@ -1384,6 +1493,10 @@ public class PropertiesEventSequence {
 
 	public void write_to_property_map (Map<String, String> properties, boolean isReviewed) {
 
+		// Sequence type
+
+		put_if_non_null (properties, EVS_NAME_SEQUENCE_TYPE, sequence_type);
+
 		// Event network
 
 		put_if_non_null (properties, "eventsource", eventNetwork);
@@ -1459,17 +1572,22 @@ public class PropertiesEventSequence {
 
 
 
-	// Set from an event GeoJson.
+	// Set from an event GeoJson, for a sequence.
 	// Parameters:
 	//  gj_event = GeoJson containing the event.
 	// Returns true if success, false if data missing or mis-formatted.
 	// This function sets the following properties:
+	//  sequence_type
 	//  eventNetwork
 	//  eventCode
 	//  event_time
 	//  title
 
-	public boolean set_from_event_gj (JSONObject gj_event) {
+	public boolean set_from_event_gj_for_sequence (JSONObject gj_event) {
+
+		// Sequence type
+
+		set_sequence_type_sequence();
 
 		// Event network
 
@@ -1507,7 +1625,70 @@ public class PropertiesEventSequence {
 		//if (s == null || s.isEmpty()) {
 		//	return false;
 		//}
-		if (!( set_title_from_event_title (s) )) {
+		if (!( set_title_from_event_title_for_sequence (s) )) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+
+
+	// Set from an event GeoJson, for a swarm.
+	// Parameters:
+	//  gj_event = GeoJson containing the event.
+	// Returns true if success, false if data missing or mis-formatted.
+	// This function sets the following properties:
+	//  sequence_type
+	//  eventNetwork
+	//  eventCode
+	//  event_time
+	//  title
+
+	public boolean set_from_event_gj_for_swarm (JSONObject gj_event) {
+
+		// Sequence type
+
+		set_sequence_type_swarm();
+
+		// Event network
+
+		String s = GeoJsonUtils.getString (gj_event, "properties", "net");
+		if (s == null || s.isEmpty()) {
+			return false;
+		}
+		if (!( set_eventNetwork (s) )) {
+			return false;
+		}
+
+		// Event network code
+
+		s = GeoJsonUtils.getString (gj_event, "properties", "code");
+		if (s == null || s.isEmpty()) {
+			return false;
+		}
+		if (!( set_eventCode (s) )) {
+			return false;
+		}
+
+		// Event time
+
+		Long t = GeoJsonUtils.getTimeMillis (gj_event, "properties", "time");
+		if (t == null) {
+			return false;
+		}
+		if (!( set_event_time (t.longValue()) )) {
+			return false;
+		}
+
+		// Title
+
+		s = GeoJsonUtils.getString (gj_event, "properties", "title");
+		//if (s == null || s.isEmpty()) {
+		//	return false;
+		//}
+		if (!( set_title_from_event_title_for_swarm (s) )) {
 			return false;
 		}
 
@@ -1598,7 +1779,7 @@ public class PropertiesEventSequence {
 
 
 
-	// Overwrite event network and code,.
+	// Overwrite event network and code.
 	// Parameters:
 	//  the_eventNetwork = Network identifier for the event (for example, "us").
 	//  the_eventCode =  Network code for the event (for example, "10006jv5").
@@ -1740,6 +1921,7 @@ public class PropertiesEventSequence {
 
 	private static final int MARSHAL_VER_1 = 98001;		// For normal product
 	private static final int MARSHAL_VER_2 = 98002;		// For delete product
+	private static final int MARSHAL_VER_3 = 98003;		// For normal product with sequence-type added
 
 	private static final String M_VERSION_NAME = "PropertiesEventSequence";
 
@@ -1762,7 +1944,7 @@ public class PropertiesEventSequence {
 
 		// Version
 
-		int ver = ((region_type != null) ? MARSHAL_VER_1 : MARSHAL_VER_2);
+		int ver = ((region_type != null) ? MARSHAL_VER_3 : MARSHAL_VER_2);
 		writer.marshalInt (M_VERSION_NAME, ver);
 
 		// Contents
@@ -1803,6 +1985,33 @@ public class PropertiesEventSequence {
 			marshal_string_or_null (writer, "eventCode", eventCode);
 
 			break;
+
+		case MARSHAL_VER_3:
+
+			marshal_string_or_null (writer, "sequence_type", sequence_type);
+
+			marshal_string_or_null (writer, "eventNetwork", eventNetwork);
+			marshal_string_or_null (writer, "eventCode", eventCode);
+
+			marshal_string_or_null (writer, "event_time", s_event_time);
+
+			marshal_string_or_null (writer, "region_type", region_type);
+
+			marshal_string_or_null (writer, "circle_longitude", s_circle_longitude);
+			marshal_string_or_null (writer, "circle_latitude", s_circle_latitude);
+			marshal_string_or_null (writer, "circle_radius_km", s_circle_radius_km);
+
+			marshal_string_or_null (writer, "maximum_latitude", s_maximum_latitude);
+			marshal_string_or_null (writer, "minimum_latitude", s_minimum_latitude);
+			marshal_string_or_null (writer, "maximum_longitude", s_maximum_longitude);
+			marshal_string_or_null (writer, "minimum_longitude", s_minimum_longitude);
+
+			marshal_string_or_null (writer, "start_time", s_start_time);
+			marshal_string_or_null (writer, "end_time", s_end_time);
+
+			marshal_string_or_null (writer, "title", title);
+
+			break;
 		}
 	
 		return;
@@ -1814,7 +2023,7 @@ public class PropertiesEventSequence {
 	
 		// Version
 
-		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_2);
+		int ver = reader.unmarshalInt (M_VERSION_NAME, MARSHAL_VER_1, MARSHAL_VER_3);
 
 		// Contents
 
@@ -1828,6 +2037,10 @@ public class PropertiesEventSequence {
 		case MARSHAL_VER_1:
 
 			clear();
+
+			if (!( set_sequence_type_sequence() )) {		// default to "sequence"
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Failed to set default sequence type");
+			}
 
 			s = reader.unmarshalString ("eventNetwork");
 			if (!( set_eventNetwork(s) )) {
@@ -1921,6 +2134,92 @@ public class PropertiesEventSequence {
 			}
 
 			s = check_invariant_for_delete();
+			if (s != null) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Invariant violation: " + s);
+			}
+
+			break;
+
+		case MARSHAL_VER_3:
+
+			clear();
+
+			s = reader.unmarshalString ("sequence_type");
+			if (!( set_sequence_type(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad sequence_type: " + s);
+			}
+
+			s = reader.unmarshalString ("eventNetwork");
+			if (!( set_eventNetwork(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad eventNetwork: " + s);
+			}
+
+			s = reader.unmarshalString ("eventCode");
+			if (!( set_eventCode(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad eventCode: " + s);
+			}
+
+			s = reader.unmarshalString ("event_time");
+			if (!( set_event_time(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad event_time: " + s);
+			}
+
+			s = reader.unmarshalString ("region_type");
+			if (!( set_region_type(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad region_type: " + s);
+			}
+
+			s = reader.unmarshalString ("circle_longitude");
+			if (!( set_circle_longitude(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad circle_longitude: " + s);
+			}
+
+			s = reader.unmarshalString ("circle_latitude");
+			if (!( set_circle_latitude(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad circle_latitude: " + s);
+			}
+
+			s = reader.unmarshalString ("circle_radius_km");
+			if (!( set_circle_radius_km(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad circle_radius_km: " + s);
+			}
+
+			s = reader.unmarshalString ("maximum_latitude");
+			if (!( set_maximum_latitude(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad maximum_latitude: " + s);
+			}
+
+			s = reader.unmarshalString ("minimum_latitude");
+			if (!( set_minimum_latitude(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad minimum_latitude: " + s);
+			}
+
+			s = reader.unmarshalString ("maximum_longitude");
+			if (!( set_maximum_longitude(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad maximum_longitude: " + s);
+			}
+
+			s = reader.unmarshalString ("minimum_longitude");
+			if (!( set_minimum_longitude(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad minimum_longitude: " + s);
+			}
+
+			s = reader.unmarshalString ("start_time");
+			if (!( set_start_time(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad start_time: " + s);
+			}
+
+			s = reader.unmarshalString ("end_time");
+			if (!( set_end_time(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad end_time: " + s);
+			}
+
+			s = reader.unmarshalString ("title");
+			if (!( set_title(s) )) {
+				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Bad title: " + s);
+			}
+
+			s = check_invariant();
 			if (s != null) {
 				throw new MarshalException ("PropertiesEventSequence.do_umarshal: Invariant violation: " + s);
 			}
@@ -2023,7 +2322,7 @@ public class PropertiesEventSequence {
 
 		// Set properties for mainshock
 
-		if (!( props.set_from_event_gj (gj_event) )) {
+		if (!( props.set_from_event_gj_for_sequence (gj_event) )) {
 			throw new IllegalArgumentException ("PropertiesEventSequence.test_make_for_mainshock: Failed to set properties for mainshock");
 		}
 

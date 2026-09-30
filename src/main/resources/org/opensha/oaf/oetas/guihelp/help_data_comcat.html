@@ -1,0 +1,133 @@
+<html>
+    <head>
+        <title>Data Source Options: Comcat</title>
+    </head>
+    <body>
+        <h2>Data Source Options: Comcat</h2>
+        <p>
+            This panel lets you specify options for loading an earthquake catalog from Comcat.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Use start and end times</b></p>
+        <p>
+            By default, the GUI fetches earthquakes beginning 60 days before the mainshock,
+            and ending 10 minutes before the current time.
+        </p>
+        <p>
+            If you want to override this behavior, then you can check this box, and enter your desired
+            catalog start and end times in the fields below.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Data Start Time<br>Data End Time</b></p>
+        <p>
+            These fields contain the start and end times of the earthquake catalog,
+            expressed as days since the mainshock.
+            The start time can be negative, to indicate that the catalog includes
+            foreshocks which occur before the mainshock.
+        </p>
+        <ul>
+            <li>
+                If <b>Use start and end times</b> is checked, then you use these fields to enter
+                your desired catalog start and end time.<br>&nbsp;
+            </li>
+            <li>
+                If <b>Use start and end times</b> is not checked, then these fields are read-only.
+                When the catalog is loaded, these fields are filled in with the start and end
+                times that were actually used to fetch the catalog from Comcat.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Use minimum magnitude<br>Minimum magnitude</b></p>
+        <p>
+            These control the minimum magnitude earthquakes to be fetched from Comcat.
+        </p>
+        <ul>
+            <li>
+                If <b>Use minimum magnitude</b> is checked, then you can enter the minimum magnitude
+                in the <b>Minimum Magnitude</b> field.<br>&nbsp;
+            </li>
+            <li>
+                If <b>Use minimum magnitude</b> is not checked, then the system selects a minimum
+                magnitude. It is typically 0.5 magnitude less than the pre-programmed magnitude of
+                completeness for the mainshock&#39;s location.
+                In this case the <b>Minimum Magnitude</b> field is disabled.
+            </li>
+        </ul>
+        <p>
+            Note that if you are accessing a very large earthquake sequence, then you may want to
+            increase the minimum magnitude so as to reduce the number of earthquakes that are loaded
+            into the GUI.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Use analyst options</b></p>
+        <p>
+            If this box is checked, then the GUI examines the most recent forecast to see if it contains
+            analyst-supplied options for forecast parameters, search region, injectable text, etc.
+            If so, then those analyst-supplied options are used to initialize the GUI.
+        </p>
+        <p>
+            If this box is not checked, or if no analyst-supplied options are found, then the GUI is
+            initialized to default values.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Region Type</b></p>
+        <p>
+            This drop-down list selects what type of aftershock search region you want to use.
+        </p>
+        <ul>
+            <li>
+                <i>Standard</i> - Lets the system select the search region.
+                If <b>Use analyst options</b> is checked and the most recent forecast contains an
+                analyst-selected search region, then that search region is used.
+                Otherwise, the pre-programmed search region is used.
+                The pre-programmed search region is a circle, whose radius equals the Wells and Coppersmith
+                rupture length, and whose center is determined by the centroid algorithm.<br>&nbsp;
+            </li>
+            <li>
+                <i>Centroid WC Circle</i> - The search region is a circle, whose radius is a multiple of the
+                Wells and Coppersmith rupture length, and whose center is determined by the centroid algorithm.<br>&nbsp;
+            </li>
+            <li>
+                <i>Centroid Circle</i> - The search region is a circle, whose radius is a specified number
+                of kilometers, and whose center is determined by the centroid algorithm.<br>&nbsp;
+            </li>
+            <li>
+                <i>Epicenter WC Circle</i> - The search region is a circle, whose radius is a multiple of the
+                Wells and Coppersmith rupture length, and whose center is the mainshock&#39;s epicenter.<br>&nbsp;
+            </li>
+            <li>
+                <i>Epicenter Circle</i> - The search region is a circle, whose radius is a specified number
+                of kilometers, and whose center is the mainshock&#39;s epicenter.<br>&nbsp;
+            </li>
+            <li>
+                <i>Custom Circle</i> - The search region is a circle. You can enter the circle&#39;s radius in kilometers,
+                and the latitude and longitude of the circle&#39;s center<br>&nbsp;
+            </li>
+            <li>
+                <i>Custom Rectangle</i> - The search region is a rectangle. You can enter the minimum and maximum
+                values for latitude and longitude. Note that although rectangular search regions are supported,
+                they have never been used.
+            </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p><b>Region</b></p>
+        <p>
+            This button opens a sub-panel that you use to edit the aftershock search region.
+            The contents of the sub-panel varies depending on the region type.
+            The button is disabled if the region type is <i>Standard</i>.
+        </p>
+        <p>&nbsp;</p>
+        <p><b>Show outer region</b></p>
+        <p>
+            If this box is checked, then the GUI fetches earthquakes in a region that is approximately
+            70 percent larger than the aftershock search region.
+        </p>
+        <p>
+            Earthquakes outside the aftershock search region do not participate in parameter fitting,
+            but they are included in the catalog and are plotted in the <b>Epicenters Tab</b>.
+            Also, the outer region itself is plotted as a large dashed circle that is concentric with the
+            aftershock search region. You can examine the plot to see if the chosen aftershock
+            search region is capturing the sequence.
+        </p>
+    </body>
+</html>
