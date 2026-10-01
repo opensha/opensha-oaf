@@ -6,6 +6,7 @@ import org.opensha.commons.data.Site;
 import org.opensha.commons.geo.Location;
 import org.opensha.commons.geo.LocationUtils;
 import org.opensha.sha.earthquake.EqkRupture;
+import org.opensha.sha.earthquake.PointSource;
 import org.opensha.sha.earthquake.ProbEqkSource;
 import org.opensha.sha.faultSurface.PointSurface;
 import org.opensha.sha.imr.ScalarIMR;
@@ -21,10 +22,9 @@ public class DistanceInterpolator extends AbstractGMPEInterpolation.LogSpacedDou
 	@Override
 	public void setGMPE_Params(ScalarIMR gmpe, ProbEqkSource source, int index) {
 		// set site location for current rupture
+		Preconditions.checkState(source instanceof PointSource);
 		double dist = getValue(index);
-		EqkRupture rup = gmpe.getEqkRupture();
-		Preconditions.checkState(rup.getRuptureSurface() instanceof PointSurface);
-		Location rupLoc = ((PointSurface)rup.getRuptureSurface()).getLocation();
+		Location rupLoc = ((PointSource)source).getLocation();
 		Location siteLoc = LocationUtils.location(rupLoc, 0, dist);
 		gmpe.setSiteLocation(siteLoc);
 	}
@@ -35,11 +35,8 @@ public class DistanceInterpolator extends AbstractGMPEInterpolation.LogSpacedDou
 //	}
 
 	@Override
-	public Double detectCurrentVal(ScalarIMR gmpe, Site site) {
-		EqkRupture rup = gmpe.getEqkRupture();
-		Preconditions.checkState(rup.getRuptureSurface() instanceof PointSurface);
-		Location rupLoc = ((PointSurface)rup.getRuptureSurface()).getLocation();
-		return LocationUtils.horzDistanceFast(gmpe.getSite().getLocation(), rupLoc);
+	public Double detectCurrentVal(ScalarIMR gmpe, Location sourceLoc, Site site) {
+		return LocationUtils.horzDistanceFast(site.getLocation(), sourceLoc);
 	}
 
 }
