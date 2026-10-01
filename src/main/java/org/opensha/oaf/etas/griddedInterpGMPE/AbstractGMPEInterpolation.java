@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.opensha.commons.data.Site;
 import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
+import org.opensha.commons.geo.Location;
 import org.opensha.sha.earthquake.EqkRupture;
 import org.opensha.sha.earthquake.ProbEqkSource;
 import org.opensha.sha.imr.ScalarIMR;
@@ -122,8 +123,8 @@ public abstract class AbstractGMPEInterpolation<E> implements Iterable<E> {
 				}
 				
 				@Override
-				public Double detectCurrentVal(ScalarIMR gmpe, Site site) {
-					return LogSpacedDouble.this.detectCurrentVal(gmpe, site);
+				public Double detectCurrentVal(ScalarIMR gmpe, Location sourceLoc, Site site) {
+					return LogSpacedDouble.this.detectCurrentVal(gmpe, sourceLoc, site);
 				}
 			};
 		}
@@ -226,10 +227,10 @@ public abstract class AbstractGMPEInterpolation<E> implements Iterable<E> {
 	
 //	public abstract Set<EqkRupture> getViableRuptures(Set<EqkRupture> ruptures, int index);
 	
-	public abstract E detectCurrentVal(ScalarIMR gmpe, Site site);
+	public abstract E detectCurrentVal(ScalarIMR gmpe, Location sourceLoc, Site site);
 	
-	public double detectInterpolatedBinIndex(ScalarIMR gmpe, Site site) {
-		E curVal = detectCurrentVal(gmpe, site);
+	public double detectInterpolatedBinIndex(ScalarIMR gmpe, Location sourceLoc, Site site) {
+		E curVal = detectCurrentVal(gmpe, sourceLoc, site);
 		return getInterpolatedBinIndex(curVal);
 	}
 

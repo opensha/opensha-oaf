@@ -3,6 +3,7 @@ package org.opensha.oaf.etas.griddedInterpGMPE;
 import java.util.Set;
 
 import org.opensha.commons.data.Site;
+import org.opensha.commons.geo.Location;
 import org.opensha.commons.param.Parameter;
 import org.opensha.commons.param.impl.WarningDoubleParameter;
 import org.opensha.sha.earthquake.EqkRupture;
@@ -32,7 +33,7 @@ public class DoubleParameterInterpolator extends EvenlySpacedDouble {
 //	}
 
 	@Override
-	public Double detectCurrentVal(ScalarIMR gmpe, Site site) {
+	public Double detectCurrentVal(ScalarIMR gmpe, Location sourceLoc, Site site) {
 		if (site.containsParameter(getName()))
 			return (Double)site.getParameter(Double.class, getName()).getValue();
 		return (Double)gmpe.getParameter(getName()).getValue();

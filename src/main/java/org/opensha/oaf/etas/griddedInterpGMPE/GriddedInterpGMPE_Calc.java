@@ -271,7 +271,7 @@ public class GriddedInterpGMPE_Calc {
 				indexes[0] = distInterp.getInterpolatedBinIndex(dist);
 				
 				for (int j=1; j<allInterps.size()-1; j++)
-					indexes[j] = allInterps.get(j).detectInterpolatedBinIndex(null, site);
+					indexes[j] = allInterps.get(j).detectInterpolatedBinIndex(null, sourceLoc, site);
 				
 				for (int i=0; i<xVals.size(); i++) {
 					indexes[indexes.length-1] = i;

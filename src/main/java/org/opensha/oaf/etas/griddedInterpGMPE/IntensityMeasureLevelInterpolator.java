@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.opensha.commons.data.Site;
 import org.opensha.commons.data.function.DiscretizedFunc;
+import org.opensha.commons.geo.Location;
 import org.opensha.sha.earthquake.EqkRupture;
 import org.opensha.sha.earthquake.ProbEqkSource;
 import org.opensha.sha.imr.ScalarIMR;
@@ -50,7 +51,7 @@ public class IntensityMeasureLevelInterpolator extends AbstractGMPEInterpolation
 //	}
 
 	@Override
-	public Double detectCurrentVal(ScalarIMR gmpe, Site site) {
+	public Double detectCurrentVal(ScalarIMR gmpe, Location sourceLoc, Site site) {
 		return (Double)gmpe.getIntensityMeasureLevel();
 	}
 
