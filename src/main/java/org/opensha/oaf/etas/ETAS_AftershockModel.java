@@ -88,6 +88,8 @@ public abstract class ETAS_AftershockModel {
 	protected ETAScatalog simulatedCatalog;	//results of the stochastic simulations
 	protected Boolean timeDependentMc = false;
 	protected boolean validate;
+
+	protected double minSimulatedMag;
 	
 	/**
 	 * This converts the likelihood from log-likelihood to likelihood values, making sure NaNs do not occur 
@@ -224,6 +226,10 @@ public abstract class ETAS_AftershockModel {
 		return nSims;
 	}
 
+	public double getMinSimulatedMag() {
+		return minSimulatedMag;
+	}
+	
 	public void setMagComplete(double magComplete) {
 		double prevMc = this.magComplete;
 		this.magComplete = magComplete;
@@ -327,11 +333,11 @@ public abstract class ETAS_AftershockModel {
 		
 		double minMag;
 		if (dynamicMinMag) {
-//			minMag = maxASmag - 2.7;
-			minMag = 3.0;
+			minMag = maxASmag - 4.0; //get a few 1000 as, hopefully
+//			minMag = 3.0;	// set it to 3.0 if you want to insist on big simulations.
 
 
-			// calibrate minimum magnitude choice by running 100 sims. If any come back with zero events, reduce minMag
+			// calibrate minimum magnitude choice by running 100 1-day sims. If any come back with zero events, reduce minMag
 			if (nSims > 0) {
 				int nCalibrationSims = 100;
 //				boolean iszero = true;
@@ -341,7 +347,7 @@ public abstract class ETAS_AftershockModel {
 				while (numNotZero < 100 & minMag > -3.0){
 					minMag--;
 					simulatedCatalog = new ETAScatalog(ams_vec, a_vec, p_vec, c_vec, epiLikelihood, alpha, b, refMag, 
-							mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMaxDays, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims, validate); //maxMag = 9.5, maxGeneratons = 100;
+							mainShock, aftershockList, dataMinDays, dataMaxDays, forecastMinDays, forecastMinDays+1.0, magComplete, minMag, maxMag, maxGenerations, nCalibrationSims, validate); //maxMag = 9.5, maxGeneratons = 100;
 					numNotZero = 0;
 					for (int i = 0; i < simulatedCatalog.numEventsFinal.length; i++) {
 						if(simulatedCatalog.numEventsFinal[i] > 0)
@@ -373,6 +379,7 @@ public abstract class ETAS_AftershockModel {
 		this.forecastMaxDays = forecastMaxDays;
 		this.simulatedCatalog = simulatedCatalog;
 		this.nSims = nSims;
+		this.minSimulatedMag = minMag;
 		
  		
 	}
@@ -628,36 +635,14 @@ public abstract class ETAS_AftershockModel {
 		computeNum_DistributionFunc(tMinDays, tMaxDays, mag);
 		
 		double[] fractValArray = new double[fractileArray.length];
-
-//		double probOne = 1 - num_DistributionFunc.getY(0); // (1 - probability of zero events)
-//		double lambda = -Math.log(1-probOne);
-//		if(lambda <= 0) lambda = 0;
-//		
+		
 		for(int i = 0; i < fractileArray.length; i++){
-			fractValArray[i] = num_DistributionFunc.getDiscreteFractile(fractileArray[i]);
-//			fractValArray[i] = scaledNumDistributionFunc(fractileArray[i], mag);
-			
-//			if(mag < simulatedCatalog.minMagLimit) {
-//				
-//				// fractValComplete is an integer (the number of earthquakes for which f% of the simulations have fewer)
-//				// this can be zero, which is no good for scaling the rate to magnitudes lower than mag (or magComplete)
-//				// It is therefore necessary to produce some kind of fractional count. We do this by computing the
-//				// Poisson rate that gives the observed probability of zero events in the simulations. 
-//
-////				if(D) System.out.println("mag=" + mag + " duration=" + (tMaxDays-tMinDays) + " fractValComplete=" + fractValComplete);
-//				
-//				if(fractValComplete <= 1){
-////					if(D) System.out.println("using Poisson approximation for fractile");
-//					fractValComplete = poissQuantile(lambda, fractileArray[i]);
-////					if(D) System.out.println("new fractValComplete=" + fractValComplete + " probOne=" + probOne + " lambda=" + lambda);
-//				}
-//				
-//				fractValArray[i] = Math.pow(10, -b*(mag - simulatedCatalog.minMagLimit)) * fractValComplete;	
-//			} else
-//			fractValArray[i] = fractValComplete;
+//			fractValArray[i] = num_DistributionFunc.getDiscreteFractile(fractileArray[i]);
+			fractValArray[i] = scaledNumDistributionFunc(fractileArray[i], mag);
 		}
 		return fractValArray;
 	}
+
 	
 	public double scaledNumDistributionFunc(double fractile, double mag){
 		

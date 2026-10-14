@@ -1,19 +1,18 @@
 package org.opensha.oaf.etas;
 
 import java.awt.Color;
-import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.opensha.commons.data.xyz.GriddedGeoDataSet;
 import org.opensha.commons.geo.GriddedRegion;
 import org.opensha.commons.geo.Location;
-import org.opensha.commons.param.impl.DoubleParameter;
-import org.opensha.commons.param.impl.EnumParameter;
 import org.opensha.commons.util.cpt.CPT;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
@@ -418,19 +417,6 @@ public class ETAS_RateModel2D {
 			return mmiModel[1][pt];
 		}
 		
-//			if (pt == mmiModel[0].length-1)
-//				return mmiModel[1][pt];
-//			else{
-//				double baseMag = mmiModel[1][pt];
-//				double topMag = mmiModel[1][pt+1];
-//				
-//				double baseDist = mmiModel[0][pt];
-//				double topDist = mmiModel[0][pt];
-//				
-//				return baseMag + (topMag-baseMag)/(topDist-baseDist) * D;
-//			}
-//
-//		}
 	}
 	
 	
@@ -624,10 +610,15 @@ public class ETAS_RateModel2D {
 				
 				long creationTimeMillis = System.currentTimeMillis();
 
+//				construct descriptive text
+				SimpleDateFormat formatter=new SimpleDateFormat("d MMM yyyy, HH:mm");  
+				formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+				
+				
 				String jsonHeader = "{"
 						+ "\"mainshock\":{"
 						+ "\n\t\"eventID\": \"" + mainshock.getEventId() + "\""
-						+ ",\n\t \"originTimeUTC\": \"" + dateStart +"\""
+						+ ",\n\t \"originTimeUTC\": \"" + formatter.format(mainshock.getOriginTime()) +"\""
 						+ ",\n\t \"originTime\": " + mainshock.getOriginTime()
 						+ ",\n\t \"forecastStartDaysFromOrigin\": " + forecastStartTime
 						+ ",\n\t \"creationTime\": " + creationTimeMillis

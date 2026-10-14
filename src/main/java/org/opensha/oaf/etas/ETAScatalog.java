@@ -1,14 +1,11 @@
 package org.opensha.oaf.etas;
 
-
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.opensha.commons.data.function.ArbDiscrEmpiricalDistFunc;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupList;
 import org.opensha.sha.earthquake.observedEarthquake.ObsEqkRupture;
 
@@ -145,19 +142,11 @@ public class ETAScatalog {
 //				eqInt = compress(newEqList);
 //				catalogTimesList.add(i, newEqTimesList);			
 				catalogList.add(i, newEqList);			//this is super memory intensive... need a compressed representation
-				// instead of adding the new catalog to the list, just compute a histogram of event times. (Magnitude isn't even required)
-				
-				
 				
 			}
 			toc = watch.elapsed(TimeUnit.SECONDS);
 			if(D) System.out.println("It took " + toc + " seconds to generate stochastic catalogs.");
 			watch.stop();
-			
-//			double dM = 0.1;
-//			int numMbins = (int)((maxMagLimit - Mc)/dM + 1);
-//			double[] quantiles = new double[]{0.025,0.5,0.975};
-//			StackedMND mnd = new StackedMND(nEvents, dM, numMbins, b, quantiles);
 			
 		}
 		
@@ -169,66 +158,7 @@ public class ETAScatalog {
 //		this.numGenerations = nGens;
 	}
 	
-	
-//	public List<float[]> getNewETAScatalogTimes(ObsEqkRupture mainshock, ObsEqkRupList aftershocks, double a_sample, double p_sample, double c_sample, int simNumber){
-//		
-//		//extract magnitudes and times from supplied Eqk rupture objects to make catalog (combine MS and AS's)
-//		List<float[]> newEqList = new ArrayList<float[]>();
-////		List<float[]> finalEqList = new ArrayList<float[]>();
-//		List<float[]> finalEqTimesList = new ArrayList<float[]>();
-//		
-//		//double[] event = {0, mainshock.getMag(), 0};	//utility variable : {relative time, magnitude, generation number}
-//
-//		double t0 = mainshock.getOriginTime(); //in milliseconds
-//		
-//		//combine lists
-//		ObsEqkRupList seedQuakes = new ObsEqkRupList();
-//		seedQuakes.add(mainshock);
-//		Collections.reverse(aftershocks);
-//		seedQuakes.addAll(aftershocks);
-//
-//		//int counter = 0;
-//		//go through seed (observed) earthquake list, add each event to a pared-down eventList and add simulated children
-//		float[] event = new float[3];
-//		for(ObsEqkRupture rup : seedQuakes){
-//			event[0] = (float) ((rup.getOriginTime() - t0)/ETAS_StatsCalc.MILLISEC_PER_DAY);	//elapsed time in days
-//			event[1] = (float) rup.getMag();	
-//			event[2] = 0;	//generation number
-//			
-//			//check whether event is prior to forecast start, and larger than Mc
-//			if( event[0] <= forecastStart && event[0] >= 0 && event[1] >= Mc){
-//				//System.out.println("Seed "+counter++);
-//				//newEqList.add(event); 
-//
-//				//add children
-//				newEqList = getChildren(newEqList, event[0], event[1], (int)event[2], a_sample, p_sample, c_sample, simNumber);
-//						
-//			}else{
-//				//System.out.println("Skipping Seed "+counter++);
-//			}
-//			
-//		}
-//		
-//		// sort catalog
-//		Collections.sort(newEqList, new java.util.Comparator<float[]>() {
-//		    public int compare(float[] a, float[] b) {
-//		        return Double.compare(a[0], b[0]);
-//		    }
-//		});
-//		
-//		// remove events under mc
-//		for(float[] eq : newEqList){
-//			if(eq[1] >= Mc) {
-//				finalEqTimesList.add(new float[]{eq[0]});
-////				finalEqList.add(eq);
-//			}
-//		}
-//		
-//		//this.eqList = newEqList;
-////		return finalEqList;
-//		return finalEqTimesList;
-//	}
-	
+
 	public List<float[]> getNewETAScatalog(ObsEqkRupture mainshock, ObsEqkRupList aftershocks, double a_sample, double p_sample, double c_sample, int simNumber){
 		
 		//extract magnitudes and times from supplied Eqk rupture objects to make catalog (combine MS and AS's)
@@ -275,7 +205,8 @@ public class ETAScatalog {
 		
 		// remove events under mc
 		for(float[] eq : newEqList){
-			if(eq[1] >= Mc);
+//			if(eq[1] >= Mc);
+			if(eq[1] >= minMagLimit);
 				finalEqList.add(eq);
 		}
 		
@@ -305,7 +236,10 @@ public class ETAScatalog {
 		if (ngen == 1) {
 			prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample, b, p_sample, c, alpha, minMagLimit);
 		} else {
+//			 double prodCorrection = Math.log10( (maxMagLimit - Mc)/(maxMagLimit - minMagLimit) );
+			 
 			double prodCorrection = Math.log10( (maxMagLimit - Mc)/(maxMagLimit - minMagLimit) );
+			
 			prod = calculateProductivity(t, mag, forecastStart, forecastEnd, a_sample + prodCorrection, b, p_sample, c, alpha, minMagLimit);
 		}
 		long numNew = assignNumberOfOffspring(prod); 
@@ -523,105 +457,14 @@ public class ETAScatalog {
 		return catalogList.get(index); 
 	}
 
-// //not so useful...
-//	public List<float[]> getAllETAScatalogs(){
-//		List<float[]> allCatalogList = new ArrayList<float[]>(); //list of catalogs
-//		List<float[]> eqCat = new ArrayList<float[]>();
-//
-//		//cycle through the simulated catalogs
-//		for(int i = 0; i < nSims; i++){
-//			eqCat = getETAScatalog(i); 	//double[] eqCat = {relativeTime, magnitude, generationNumber}
-//			for(int j = 0; j < eqCat.size(); j++) {
-//				allCatalogList.add(eqCat.get(j));
-//			}
-//		}
-//		if(D) System.out.println("allCatalogList contains " + allCatalogList.size() + " elements.");
-//		if(D) System.out.println("last eqCat contains " + eqCat.size() + " elements.");
-//		return allCatalogList;
-//	}
-//	
-	
-	
-//	public int[] getETASintCatalog(int index){
-//		return intCatalogList.get(index); 
-//		// return eqList;
-//	}
-	
-//	public int[] get_nEvents(){
-//		return this.numEventsFinal;
-//	}
-	
 	public int get_nEvents(List<float[]> eqList){
 		return eqList.size();
 	}
-	
-//	public float[] get_maxMag(){
-//		return this.maxMags;
-//	}
-	
-//	public float get_maxMag(List<float[]> eqList){ 
-//		float maxMag = Float.NEGATIVE_INFINITY;
-//		float mag;
-//
-//		for(float[] ev : eqList){
-//			mag = ev[1];
-//			if( mag > maxMag )
-//				maxMag = mag;
-//		}
-//		return maxMag; 
-//	}
-	
-//	/* try thjs to reduce memory usage */
-//	private int[] compress(List<float[]> eqList) {
-//		int[] eqInt = new int[eqList.size()];
-//		float[] ev =  new float[3];
-//		
-//		int maxMinutes = (int)Math.pow(2,22);
-//		
-//		for (int i = 0; i < eqList.size(); i++) {
-//			 ev = eqList.get(i);
-//			 int mag = (int)((ev[1] - Mc)*100 + 0.5);
-//			 int minutes = Math.round(ev[0]*60*24);
-//			 
-//			 if (minutes < maxMinutes) 
-//			 	eqInt[i] = mag + (minutes << 10);
-//			 else
-//				eqInt[i] = mag + (maxMinutes << 10);
-//			 
-//		}
-//		return eqInt;
-//	}
 
-//	public int[] get_nGenerations(){
-//		return this.numGenerations;
-//	}
-	
-//	public int get_nGenerations(List<float[]> eqList){
-//		double maxGen = 0;
-//		double ngen;
-//
-//		for(float[] ev : eqList){
-//			ngen = ev[2];
-//			if( ngen > maxGen )
-//				maxGen = ngen;
-//		}
-//		return (int)maxGen; 
-//	}
-//	
 	public double[][][][] getLikelihood(){
 		return likelihood;
 	}
 	
-	
-//	public String printCatalog(int index){
-//		List<float[]> eqList = getETAScatalog(index);
-//		
-//		StringBuffer paragraph = new StringBuffer("Time Mag Gen\n");
-//		for(float[] eq: eqList){
-//			 paragraph.append(String.format("%5.2f %5.2f %d %n", eq[0], eq[1], (int)eq[2]));
-//		}
-//		return paragraph.toString();
-//	}
 	
 	public String printCatalog(int index){
 		List<float[]> eqList = getETAScatalog(index);

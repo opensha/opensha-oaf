@@ -925,7 +925,8 @@ public class GraphicalForecast{
 					
 				}
 				
-				if (2.99 < mag && mag < 7.01) { //added M4s NvdE 7/3/2020
+//				if (2.99 < mag && mag < 7.01) { //added M4s 20200703
+				if (2.99 < mag && mag < 8.01) { //added M8s 20261009
 					jsonString.append(""
 							+ "\n\t\t{\"magnitude\":" + String.format("%2.1f", mag)
 							+ ",\n\t\t\"p95minimum\":" + String.format("%d", (int) number[i][j][1])
@@ -935,7 +936,7 @@ public class GraphicalForecast{
 							+ ",\n\t\t\"fractileValues\":[" + fractileString + "]"
 							+ ",\n\t\t\"barPercentages\":[" + barProbabilityString + "]"
 							+ "\n\t\t}");
-					if (mag < 7) jsonString.append(",");
+					if (mag < 7.99) jsonString.append(",");
 				}
 			}
 			

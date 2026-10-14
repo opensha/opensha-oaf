@@ -4268,8 +4268,14 @@ public class AftershockStatsGUI_ETAS extends JFrame implements ParameterChangeLi
 			} else {
 				if(verbose) System.out.println("Computing Generic forecast");
 			
+				int numberSims;
+				if (plotSpecificOnlyParam.getValue())
+					numberSims = 1;
+				else
+					numberSims = numberSimsParam.getValue();
+					
 				genericModel.generateStochasticCatalog(dataStartTimeParam.getValue(), dataEndTimeParam.getValue(),
-					forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSimsParam.getValue());
+					forecastStartTimeParam.getValue(), forecastEndTimeParam.getValue(), numberSims);
 			}
 		}
 	}, true);
