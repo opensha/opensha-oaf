@@ -17,8 +17,6 @@ import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
-import org.apache.commons.math3.distribution.UniformRealDistribution;
-
 
 // Class for unmarshaling objects from an input stream.
 // Author: Michael Barall.

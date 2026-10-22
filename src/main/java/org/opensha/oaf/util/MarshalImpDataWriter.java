@@ -17,7 +17,6 @@ import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
-import org.apache.commons.math3.distribution.UniformRealDistribution;
 
 /**
  * Class for marshaling parameters/data to binary data storage.
@@ -604,7 +603,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				// Random number generator
 
-				UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+				SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 				// Generate random values
 
@@ -808,7 +807,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				// Random number generator
 
-				UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+				SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 				// Generate random values
 
@@ -1007,7 +1006,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				// Random number generator
 
-				UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+				SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 				// Generate random values
 
@@ -1206,7 +1205,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				// Random number generator
 
-				UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+				SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 				// Generate random values
 
@@ -1526,7 +1525,7 @@ public class MarshalImpDataWriter implements MarshalWriter, Closeable {
 
 				// Random number generator
 
-				UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+				SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 				// Generate random values
 

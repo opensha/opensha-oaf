@@ -39,8 +39,6 @@ import org.opensha.oaf.util.SphLatLon;
 import org.opensha.oaf.util.SphRegion;
 import org.opensha.oaf.util.SphRegionMercPolygon;
 
-import org.apache.commons.math3.distribution.UniformRealDistribution;
-
 import org.opensha.oaf.util.SimpleUtils;
 
 // Class for region-dependent parameters.
@@ -1294,7 +1292,7 @@ public abstract class OAFParameterSet<T> {
 
 		// Make random number generator
 
-		UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+		SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 		// Run the tests
 

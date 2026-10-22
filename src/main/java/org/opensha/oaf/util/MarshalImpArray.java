@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 
-import org.apache.commons.math3.distribution.UniformRealDistribution;
 
 /**
  * Class for marshaling/unmarshaling parameters/data to/from array storage.
@@ -705,7 +704,7 @@ public class MarshalImpArray implements MarshalReader, MarshalWriter {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+			SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 			// Generate random values
 

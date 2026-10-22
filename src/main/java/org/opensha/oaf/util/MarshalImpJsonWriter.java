@@ -27,7 +27,6 @@ import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.ContentHandler;
 import org.json.simple.parser.Yytoken;
 
-import org.apache.commons.math3.distribution.UniformRealDistribution;
 
 /**
  * Class for marshaling parameters/data to JSON data structures.
@@ -625,7 +624,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+			SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 			// Generate random values
 
@@ -795,7 +794,7 @@ public class MarshalImpJsonWriter implements MarshalWriter {
 
 			// Random number generator
 
-			UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+			SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 			// Generate random values
 

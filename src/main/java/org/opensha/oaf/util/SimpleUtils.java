@@ -24,7 +24,7 @@ import java.io.FileWriter;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 
-import org.apache.commons.math3.distribution.UniformRealDistribution;
+import org.opensha.oaf.oetas.OERandomGenerator;
 
 
 /**
@@ -873,16 +873,121 @@ public class SimpleUtils {
 
 
 
+	// An interface or lambda function that is a simple real-valued random number generator.
+
+	@FunctionalInterface
+	public static interface RanGen {
+		public double sample ();
+	}
+
+
+
+
+	// An interface or lambda function that is a simple integer-valued random number generator.
+
+	@FunctionalInterface
+	public static interface IntRanGen {
+		public int sample ();
+	}
+
+
+
+
+	// Internal implementation of a simple real-valued uniform random number generator.
+
+	private static class RanGenUniform implements RanGen {
+
+		// Internal random number generator.
+
+		private OERandomGenerator rangen;
+
+		// Minimum and maximum values.
+
+		private double min_value;
+		private double max_value;
+
+		// Construct uniform generator with given minimum and maximum values.
+
+		public RanGenUniform (double min_value, double max_value) {
+			this.min_value = min_value;
+			this.max_value = max_value;
+			this.rangen = new OERandomGenerator ();
+		}
+
+		// Construct uniform generator with given minimum and maximum values, and given seed.
+
+		public RanGenUniform (double min_value, double max_value, long ranseed) {
+			this.min_value = min_value;
+			this.max_value = max_value;
+			this.rangen = new OERandomGenerator (ranseed);
+		}
+
+		// Get the next random value.
+
+		@Override
+		public double sample () {
+			return rangen.uniform_sample (min_value, max_value);
+		}
+	}
+
+
+
+
+	// Internal implementation of a simple integer-valued uniform random number generator.
+
+	private static class IntRanGenUniform implements IntRanGen {
+
+		// Internal random number generator.
+
+		private OERandomGenerator rangen;
+
+		// Minimum and maximum values.
+
+		private int min_value;
+		private int max_value;
+
+		// Construct uniform generator with given minimum and maximum values.
+
+		public IntRanGenUniform (int min_value, int max_value) {
+			this.min_value = min_value;
+			this.max_value = max_value;
+			this.rangen = new OERandomGenerator ();
+		}
+
+		// Construct uniform generator with given minimum and maximum values, and given seed.
+
+		public IntRanGenUniform (int min_value, int max_value, long ranseed) {
+			this.min_value = min_value;
+			this.max_value = max_value;
+			this.rangen = new OERandomGenerator (ranseed);
+		}
+
+		// Get the next random value.
+
+		@Override
+		public int sample () {
+			return rangen.uniform_int_sample (min_value, max_value);
+		}
+	}
+
+
+
+
 	// Create a new uniform random number generator.
 	// The generator returns values uniformly distributed between 0 and 1.
 	// If a test is in progress, the generator is seeded so that results are reproducible.
+	// Note: The current implementation returns values in the open interval (0.0, 1.0).
+	// A previous implementation returned values in the half-open interval [0.0, 1.0).
+	// Callers should assume that 0.0 and 1.0 are both possible return values.
 
-	public static UniformRealDistribution make_uniform_rangen () {
-		UniformRealDistribution rangen = new UniformRealDistribution();
+	public static RanGen make_uniform_rangen () {
+		RanGenUniform rangen;
 
 		long ranseed = TestMode.get_test_ranseed();
 		if (ranseed > 0L) {
-			rangen.reseedRandomGenerator (ranseed);
+			rangen = new RanGenUniform (0.0, 1.0, ranseed);
+		} else {
+			rangen = new RanGenUniform (0.0, 1.0);
 		}
 
 		return rangen;

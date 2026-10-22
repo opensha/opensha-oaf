@@ -13,10 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Arrays;
+import java.util.function.DoubleUnaryOperator;
 
-import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.distribution.PoissonDistribution;
-import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.jfree.data.Range;
 import org.opensha.commons.data.function.EvenlyDiscretizedFunc;
 import org.opensha.commons.data.function.HistogramFunction;
@@ -807,8 +806,6 @@ public class AftershockStatsCalc {
 	 * Then, an exponential distribution is used to randomly select a magnitude for each aftershock.
 	 * Then, any aftershocks below the time-dependent magnitude of completeness are discarded.
 	 *
-	 * The documentation for UniformRealDistribution is here:
-	 * http://commons.apache.org/proper/commons-math/javadocs/api-3.6/org/apache/commons/math3/distribution/UniformRealDistribution.html
 	 * The algorithm used for generating the Poisson distribution is the first algorithm given here:
 	 * https://en.wikipedia.org/wiki/Poisson_distribution
 	 * The algorithm used for generating the exponential distribution is given here:
@@ -817,28 +814,28 @@ public class AftershockStatsCalc {
 	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
 			MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays) {
 
-		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
+		// Random number generator, produces random numbers between 0.0 and 1.0
 
 		long originTime = 0L;
-		UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
+		SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
 
 		return simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, originTime, rangen);
 	}
 
 
+//	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
+//			MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays, long originTime) {
+//
+//		// Random number generator, produces random numbers between 0.0 and 1.0
+//
+//		SimpleUtils.RanGen rangen = SimpleUtils.make_uniform_rangen();
+//
+//		return simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, originTime, rangen);
+//	}
+
+
 	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
-			MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays, long originTime) {
-
-		// Random number generator, produces random numbers between 0.0 (inclusive) and 1.0 (exclusive)
-
-		UniformRealDistribution rangen = SimpleUtils.make_uniform_rangen();
-
-		return simAftershockSequence(a, b, magMain, magCat, magCompFn, p, c, tMinDays, tMaxDays, originTime, rangen);
-	}
-
-
-	public static ObsEqkRupList simAftershockSequence(double a, double b, double magMain, double magCat,
-			MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays, long originTime, UniformRealDistribution rangen) {
+			MagCompFn magCompFn, double p, double c, double tMinDays, double tMaxDays, long originTime, SimpleUtils.RanGen rangen) {
 		if (!( b > 0.0 )) {
 			throw new RuntimeException("AftershockStatsCalc.simAftershockSequence: b parameter is negative or zero");
 		}
@@ -1207,11 +1204,8 @@ public class AftershockStatsCalc {
 	 * @param magCompFn = The magnitude of completeness function.
 	 * @param p = Omori p-parameter (exponent).
 	 * @param c = Omori c-parameter (time offset), in days.
-	 *
-	 * The documentation for UnivariateFunction is here:
-	 * http://commons.apache.org/proper/commons-math/javadocs/api-3.6/org/apache/commons/math3/analysis/UnivariateFunction.html
 	 */
-	public static class funcExpectedEventsRate implements UnivariateFunction {
+	public static class funcExpectedEventsRate implements DoubleUnaryOperator {
 
 		// Parameters for R&J and magnitude of completeness
 
@@ -1238,7 +1232,7 @@ public class AftershockStatsCalc {
 		// Get the aftershock rate at time tDays (in days since the mainshock).
 
 		@Override
-		public double value (double tDays) {
+		public double applyAsDouble (double tDays) {
 			return AftershockStatsCalc.getPageExpectedEventsRate(a, b, magMain, magCat, magCompFn, p, c, tDays);
 		}
 	}
@@ -1264,7 +1258,7 @@ public class AftershockStatsCalc {
 	 * @return
 	 * Returns the integral of the function from x0 to x4.
 	 */
-	private static double adapQuadSimpsonRecur (UnivariateFunction func,
+	private static double adapQuadSimpsonRecur (DoubleUnaryOperator func,
 			double x0, double x4, double f0, double f2, double f4,
 			double abs_tol, double rel_tol, int min_level, int max_level) {
 
@@ -1274,8 +1268,8 @@ public class AftershockStatsCalc {
 		double x1 = (x0 + x2) * 0.5;
 		double x3 = (x2 + x4) * 0.5;
 
-		double f1 = func.value(x1);
-		double f3 = func.value(x3);
+		double f1 = func.applyAsDouble(x1);
+		double f3 = func.applyAsDouble(x3);
 
 		// If satisfies minimum level ...
 
@@ -1334,7 +1328,7 @@ public class AftershockStatsCalc {
 	 * @return
 	 * Returns the integral of the function from a to b.
 	 */
-	private static double adapQuadSimpson (UnivariateFunction func,
+	private static double adapQuadSimpson (DoubleUnaryOperator func,
 			double a, double b, double abs_tol, double rel_tol, double max_h) {
 
 		// Check for zero length interval
@@ -1349,9 +1343,9 @@ public class AftershockStatsCalc {
 
 		double x2 = (a + b) * 0.5;
 
-		double f0 = func.value(a);
-		double f2 = func.value(x2);
-		double f4 = func.value(b);
+		double f0 = func.applyAsDouble(a);
+		double f2 = func.applyAsDouble(x2);
+		double f4 = func.applyAsDouble(b);
 
 		// Choose a maximum level to retain about 20 significant bits in h (2.10e6 ~ 2^21, 8.59e9 ~ 2^33)
 

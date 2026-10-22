@@ -26,7 +26,6 @@ import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.ContentHandler;
 import org.json.simple.parser.Yytoken;
 
-import org.apache.commons.math3.distribution.UniformRealDistribution;
 
 /**
  * Class for unmarshaling parameters/data from JSON data structures.
