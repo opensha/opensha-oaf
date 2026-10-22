@@ -71,6 +71,10 @@ evseq_cfg_params = EventSequenceParameters:
   evseq_cfg_lookback = 2592000000 (PT720H)
 etas_fetch_meth = 0
 etas_avail = false
+fcopt_fetch_meth = 0
+fcopt_avail = true
+fcopt_auto_min_mag_bins = true
+fcopt_min_mag_bins = [3.0, 4.0, 5.0, 6.0, 7.0]
 next_scheduled_lag = 0
 
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=1989-10-25T00:04:15.190Z&format=geojson&latitude=37.06823&limit=20000&longitude=-121.85576&maxdepth=700.000&maxradius=0.31276&mindepth=-5.000&minmagnitude=2.450&orderby=time&starttime=1989-08-19T00:04:15.190Z
@@ -83,23 +87,23 @@ a: like=-2.640  mean=-2.640  sdev=0.4798  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.9600  mean=0.9600  sdev=0.000  min=0.9600  max=0.9600  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01200  mean=0.01200  sdev=0.000  min=0.01200  max=0.01200  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.640  sigma_a=0.4800
-Start date: 10/25/89, 1:00 AM
-1 Day end date: 10/26/89, 1:00 AM
+Start date: 10/25/89, 1:00 AM
+1 Day end date: 10/26/89, 1:00 AM
 M>=5 mean = 0.0480211
 M>=5 median = 0.0258675
 M>=5 2.5 Percentile = 0.00296824
 M>=5 97.5 Percentile = 0.225406
-1 Week end date: 11/1/89, 1:00 AM
+1 Week end date: 11/1/89, 1:00 AM
 M>=5 mean = 0.252462
 M>=5 median = 0.135994
 M>=5 2.5 Percentile = 0.0156050
 M>=5 97.5 Percentile = 1.18503
-1 Month end date: 11/24/89, 1:00 AM
+1 Month end date: 11/24/89, 1:00 AM
 M>=5 mean = 0.619456
 M>=5 median = 0.333682
 M>=5 2.5 Percentile = 0.0382894
 M>=5 97.5 Percentile = 2.90767
-1 Year end date: 10/25/90, 1:00 AM
+1 Year end date: 10/25/90, 1:00 AM
 M>=5 mean = 1.55194
 M>=5 median = 0.835986
 M>=5 2.5 Percentile = 0.0959276
@@ -109,23 +113,23 @@ a: like=-2.440  mean=-2.446  sdev=0.03787  min=-4.500  max=-0.5000  delta=0.0100
 p: like=0.9600  mean=0.9600  sdev=0.000  min=0.9600  max=0.9600  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01200  mean=0.01200  sdev=0.000  min=0.01200  max=0.01200  delta=0.000  num=1  lo=0  hi=1
 magCompFn=FnPage[capF=1.0, capG=4.5, capH=0.75]  magCat=3.000  tStart=0.0000000  tEnd=7.0000000  nEvents=132
-Start date: 10/25/89, 1:00 AM
-1 Day end date: 10/26/89, 1:00 AM
+Start date: 10/25/89, 1:00 AM
+1 Day end date: 10/26/89, 1:00 AM
 M>=5 mean = 0.0410091
 M>=5 median = 0.0404377
 M>=5 2.5 Percentile = 0.0339008
 M>=5 97.5 Percentile = 0.0477437
-1 Week end date: 11/1/89, 1:00 AM
+1 Week end date: 11/1/89, 1:00 AM
 M>=5 mean = 0.215598
 M>=5 median = 0.212594
 M>=5 2.5 Percentile = 0.178228
 M>=5 97.5 Percentile = 0.251004
-1 Month end date: 11/24/89, 1:00 AM
+1 Month end date: 11/24/89, 1:00 AM
 M>=5 mean = 0.529003
 M>=5 median = 0.521632
 M>=5 2.5 Percentile = 0.437309
 M>=5 97.5 Percentile = 0.615877
-1 Year end date: 10/25/90, 1:00 AM
+1 Year end date: 10/25/90, 1:00 AM
 M>=5 mean = 1.32533
 M>=5 median = 1.30686
 M>=5 2.5 Percentile = 1.09560
@@ -134,23 +138,23 @@ b=1.000  magMain=6.900  apcTot=401  apcSup=30
 a: like=-2.450  mean=-2.448  sdev=0.03781  min=-4.500  max=-0.5000  delta=0.01000  num=401  lo=190  hi=220
 p: like=0.9600  mean=0.9600  sdev=0.000  min=0.9600  max=0.9600  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01200  mean=0.01200  sdev=0.000  min=0.01200  max=0.01200  delta=0.000  num=1  lo=0  hi=1
-Start date: 10/25/89, 1:00 AM
-1 Day end date: 10/26/89, 1:00 AM
+Start date: 10/25/89, 1:00 AM
+1 Day end date: 10/26/89, 1:00 AM
 M>=5 mean = 0.0408966
 M>=5 median = 0.0403270
 M>=5 2.5 Percentile = 0.0338296
 M>=5 97.5 Percentile = 0.0475818
-1 Week end date: 11/1/89, 1:00 AM
+1 Week end date: 11/1/89, 1:00 AM
 M>=5 mean = 0.215007
 M>=5 median = 0.212012
 M>=5 2.5 Percentile = 0.177853
 M>=5 97.5 Percentile = 0.250153
-1 Month end date: 11/24/89, 1:00 AM
+1 Month end date: 11/24/89, 1:00 AM
 M>=5 mean = 0.527552
 M>=5 median = 0.520204
 M>=5 2.5 Percentile = 0.436391
 M>=5 97.5 Percentile = 0.613789
-1 Year end date: 10/25/90, 1:00 AM
+1 Year end date: 10/25/90, 1:00 AM
 M>=5 mean = 1.32170
 M>=5 median = 1.30329
 M>=5 2.5 Percentile = 1.09330

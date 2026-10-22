@@ -71,6 +71,10 @@ evseq_cfg_params = EventSequenceParameters:
   evseq_cfg_lookback = 2592000000 (PT720H)
 etas_fetch_meth = 0
 etas_avail = false
+fcopt_fetch_meth = 0
+fcopt_avail = true
+fcopt_auto_min_mag_bins = true
+fcopt_min_mag_bins = [3.0, 4.0, 5.0, 6.0, 7.0]
 next_scheduled_lag = 0
 
 https://earthquake.usgs.gov/fdsnws/event/1/query?endtime=2018-09-28T10:22:54.850Z&format=geojson&latitude=-0.38273&limit=20000&longitude=119.87843&maxdepth=700.000&maxradius=0.81135&mindepth=-5.000&minmagnitude=2.950&orderby=time&starttime=2018-07-30T10:02:45.250Z
@@ -83,23 +87,23 @@ a: like=-2.470  mean=-2.470  sdev=0.5001  min=-4.500  max=-0.5000  delta=0.01000
 p: like=0.8800  mean=0.8800  sdev=0.000  min=0.8800  max=0.8800  delta=0.000  num=1  lo=0  hi=1
 c: like=0.01800  mean=0.01800  sdev=0.000  min=0.01800  max=0.01800  delta=0.000  num=1  lo=0  hi=1
 mean_a=-2.470  sigma_a=0.5004
-Start date: 9/28/18, 10:30 AM
-1 Day end date: 9/29/18, 10:30 AM
+Start date: 9/28/18, 10:30 AM
+1 Day end date: 9/29/18, 10:30 AM
 M>=5 mean = 5.72126
 M>=5 median = 2.92436
 M>=5 2.5 Percentile = 0.306127
 M>=5 97.5 Percentile = 27.9357
-1 Week end date: 10/5/18, 10:30 AM
+1 Week end date: 10/5/18, 10:30 AM
 M>=5 mean = 10.2023
 M>=5 median = 5.21481
 M>=5 2.5 Percentile = 0.545896
 M>=5 97.5 Percentile = 49.8159
-1 Month end date: 10/28/18, 10:30 AM
+1 Month end date: 10/28/18, 10:30 AM
 M>=5 mean = 14.3546
 M>=5 median = 7.33720
 M>=5 2.5 Percentile = 0.768071
 M>=5 97.5 Percentile = 70.0905
-1 Year end date: 9/28/19, 10:30 AM
+1 Year end date: 9/28/19, 10:30 AM
 M>=5 mean = 23.4334
 M>=5 median = 11.9778
 M>=5 2.5 Percentile = 1.25385

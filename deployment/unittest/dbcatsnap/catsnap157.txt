@@ -4,6 +4,6 @@ CatalogSnapshot
 	event_id: Event_4
 	start_time: 12096000
 	end_time: 1209600000
-	eqk_count: 2539
-	lat_lon_depth_list: len=2539
-	mag_time_list: len=2539
+	eqk_count: 2552
+	lat_lon_depth_list: len=2552
+	mag_time_list: len=2552
